@@ -82,6 +82,41 @@ export function replaceManagedBlock(
   return `${source.slice(0, range.start)}${nextBlock}${source.slice(range.end)}`
 }
 
+export function hasManagedBlock(
+  source: string,
+  meta: Pick<ManagedBlockMeta, 'pack' | 'install'>,
+): boolean {
+  return findManagedBlockRange(source, meta) !== null
+}
+
+export function removeManagedBlock(
+  source: string,
+  meta: Pick<ManagedBlockMeta, 'pack' | 'install'>,
+): string | null {
+  const range = findManagedBlockRange(source, meta)
+
+  if (!range) {
+    return null
+  }
+
+  const before = source.slice(0, range.start).trimEnd()
+  const after = source.slice(range.end).trimStart()
+
+  if (!before && !after) {
+    return ''
+  }
+
+  if (!before) {
+    return normalizeTrailingNewline(after)
+  }
+
+  if (!after) {
+    return normalizeTrailingNewline(before)
+  }
+
+  return `${before}\n\n${after}\n`
+}
+
 export function upsertManagedBlock(
   source: string,
   meta: ManagedBlockMeta,

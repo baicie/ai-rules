@@ -84,6 +84,33 @@ export function upsertLockEntries(
   }
 }
 
+export function removePackFromLockfile(
+  lockfile: AirulesLockfile,
+  packName: string,
+): AirulesLockfile {
+  return {
+    ...lockfile,
+    generatedAt: new Date().toISOString(),
+    packs: lockfile.packs.filter(pack => pack.name !== packName),
+    installs: lockfile.installs.filter(install => install.pack !== packName),
+  }
+}
+
+export function pruneLockfile(
+  lockfile: AirulesLockfile,
+  predicate: (install: AirulesLockInstall) => boolean,
+): AirulesLockfile {
+  const installs = lockfile.installs.filter(predicate)
+  const packNames = new Set(installs.map(install => install.pack))
+
+  return {
+    ...lockfile,
+    generatedAt: new Date().toISOString(),
+    installs,
+    packs: lockfile.packs.filter(pack => packNames.has(pack.name)),
+  }
+}
+
 function mergeLockPackEntry(
   previous: AirulesLockPack | undefined,
   incoming: AirulesLockPack,

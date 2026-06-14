@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   createManagedBlock,
   findManagedBlockRange,
+  hasManagedBlock,
   insertByPlacement,
+  removeManagedBlock,
   replaceManagedBlock,
   upsertManagedBlock,
 } from './managed-block'
@@ -133,5 +135,60 @@ describe('managed block', () => {
 
     expect(updated).toContain('## Updated Rules')
     expect(updated).not.toContain('## Rules\n<!--')
+  })
+
+  it('removes managed block without removing user content', () => {
+    const source = [
+      '# AGENTS',
+      '',
+      '<!-- airules:start pack="@baicie/react-shadcn" install="codex" version="0.1.0" hash="sha256-x" -->',
+      '## Core',
+      '<!-- airules:end pack="@baicie/react-shadcn" install="codex" -->',
+      '',
+      '## Commands',
+    ].join('\n')
+
+    const next = removeManagedBlock(source, {
+      pack: '@baicie/react-shadcn',
+      install: 'codex',
+    })
+
+    expect(next).toContain('# AGENTS')
+    expect(next).toContain('## Commands')
+    expect(next).not.toContain('airules:start')
+  })
+
+  it('returns null when managed block is missing', () => {
+    const next = removeManagedBlock('# no block\n', {
+      pack: '@baicie/react-shadcn',
+      install: 'codex',
+    })
+
+    expect(next).toBeNull()
+  })
+
+  it('hasManagedBlock returns true when present and false otherwise', () => {
+    const source = createManagedBlock(
+      {
+        pack: '@baicie/react-shadcn',
+        install: 'codex',
+        version: '0.1.0',
+      },
+      '## Core\n',
+    )
+
+    expect(
+      hasManagedBlock(source, {
+        pack: '@baicie/react-shadcn',
+        install: 'codex',
+      }),
+    ).toBe(true)
+
+    expect(
+      hasManagedBlock('# empty', {
+        pack: '@baicie/react-shadcn',
+        install: 'codex',
+      }),
+    ).toBe(false)
   })
 })

@@ -8,6 +8,8 @@ import { runDiffCommand } from './commands/diff'
 import { runDoctorCommand } from './commands/doctor'
 import { runInitCommand } from './commands/init'
 import { runListCommand } from './commands/list'
+import { runPruneCommand } from './commands/prune'
+import { runRemoveCommand } from './commands/remove'
 import { runUpdateCommand } from './commands/update'
 
 export function runCli(argv = process.argv): void {
@@ -67,6 +69,37 @@ export function runCli(argv = process.argv): void {
       await runDiffCommand({
         cwd: process.cwd(),
         name,
+      })
+    })
+
+  cli
+    .command('remove <pack>', 'Remove an installed airules pack')
+    .option('--dry-run', 'Preview removal without writing files')
+    .option('--force', 'Remove generated files even if they were modified')
+    .action(
+      async (
+        pack: string,
+        options: {
+          dryRun?: boolean
+          force?: boolean
+        },
+      ) => {
+        await runRemoveCommand({
+          cwd: process.cwd(),
+          pack,
+          dryRun: Boolean(options.dryRun),
+          force: Boolean(options.force),
+        })
+      },
+    )
+
+  cli
+    .command('prune', 'Prune stale airules lock entries')
+    .option('--dry-run', 'Preview prune without writing lockfile')
+    .action(async (options: { dryRun?: boolean }) => {
+      await runPruneCommand({
+        cwd: process.cwd(),
+        dryRun: Boolean(options.dryRun),
       })
     })
 
