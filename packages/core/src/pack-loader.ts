@@ -1,5 +1,5 @@
 import type { AirulesPack } from '@baicie/airules-schema'
-import type { ResolvedLocalPackSource } from './source'
+import type { ResolvedPackSource } from './source'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { AirulesPackSchema } from '@baicie/airules-schema'
@@ -11,9 +11,7 @@ export interface LoadedAirulesPack {
   rawContent: string
 }
 
-export function loadLocalPack(
-  source: ResolvedLocalPackSource,
-): LoadedAirulesPack {
+export function loadLocalPack(source: ResolvedPackSource): LoadedAirulesPack {
   const sourcePath = source.root
   const packFilePath = sourcePath.endsWith('.json')
     ? sourcePath

@@ -128,6 +128,6 @@ describe('renderModules', () => {
         packRoot: root,
         install,
       }),
-    ).toThrow(/Phase 1 only supports modules mode/)
+    ).toThrow(/Phase 2 only supports modules mode/)
   })
 })

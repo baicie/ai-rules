@@ -1,7 +1,9 @@
-import { sep } from 'node:path'
-import { pathToFileURL } from 'node:url'
-import { describe, expect, it } from 'vitest'
-import { resolveLocalPackSource } from './source'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { resolveLocalPackSource, resolvePackSource } from './source'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('resolveLocalPackSource', () => {
   it('resolves relative local source', () => {
@@ -18,29 +20,23 @@ describe('resolveLocalPackSource', () => {
     expect(result.root).toMatch(/[\\/]repo[\\/]packs[\\/]react-shadcn$/)
   })
 
-  it('resolves file: absolute source', () => {
-    const absolutePath = `${process.cwd()}${sep}absolute${sep}path${sep}to${sep}pack`
-    const fileUrl = pathToFileURL(absolutePath).href
-    const result = resolveLocalPackSource(fileUrl, '/repo')
-
-    expect(result.root).toBe(absolutePath)
-  })
-
-  it('rejects github source in Phase 1', () => {
+  it('tells callers to use resolvePackSource for github source', () => {
     expect(() =>
       resolveLocalPackSource('github:baicie/ai-rules/packs/react-shadcn'),
-    ).toThrow(/github source is not supported in Phase 1/)
+    ).toThrow(/Use resolvePackSource/)
   })
 
-  it('rejects npm source in Phase 1', () => {
+  it('rejects npm source in Phase 2', () => {
     expect(() => resolveLocalPackSource('npm:@baicie/react-shadcn')).toThrow(
-      /npm source is not supported in Phase 1/,
+      /npm source is not supported in Phase 2/,
     )
   })
+})
 
-  it('rejects http source in Phase 1', () => {
-    expect(() =>
-      resolveLocalPackSource('https://example.com/pack.json'),
-    ).toThrow(/http source is not supported in Phase 1/)
+describe('resolvePackSource', () => {
+  it('delegates local sources to local resolver', () => {
+    return resolvePackSource('./packs/react-shadcn', '/repo').then(result => {
+      expect(result.resolved.type).toBe('local')
+    })
   })
 })

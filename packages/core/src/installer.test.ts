@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import {
   existsSync,
   mkdirSync,
@@ -8,8 +9,12 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterEach, describe, expect, it } from 'vitest'
-import { createDryRunBlockForOperation, installLocalPack } from './installer'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import {
+  createDryRunBlockForOperation,
+  installLocalPack,
+  installPack,
+} from './installer'
 import { readAirulesLockfile } from './lockfile'
 
 let currentTmpDir: string | null = null
@@ -235,7 +240,7 @@ describe('installLocalPack', () => {
         source: './packs/react-shadcn',
         agents: ['codex'],
       }),
-    ).toThrow(/Phase 1 only supports managed-block merge/)
+    ).toThrow(/Phase 2 only supports managed-block merge/)
   })
 
   it('returns stable dry-run managed block content', () => {
@@ -302,3 +307,128 @@ describe('installLocalPack', () => {
     expect(block).toContain('## Core')
   })
 })
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+describe('installPack with github source', () => {
+  it('installs github pack through cache', () => {
+    const cwd = createTempProject()
+    vi.stubGlobal('fetch', createInstallerGitHubMockFetch())
+
+    return installPack({
+      cwd,
+      source: 'github:baicie/ai-rules/packs/react-shadcn#v0.1.0',
+      agents: ['codex'],
+    }).then(result => {
+      expect(result.packName).toBe('@baicie/react-shadcn')
+      expect(result.operations[0] && result.operations[0].action).toBe('create')
+
+      const agents = readFileSync(join(cwd, 'AGENTS.md'), 'utf8')
+      expect(agents).toContain('## Core')
+      expect(agents).toContain('install="codex"')
+
+      const lockfile = readAirulesLockfile(cwd)
+      expect(lockfile.packs[0] && lockfile.packs[0].resolved).toEqual({
+        type: 'github',
+        owner: 'baicie',
+        repo: 'ai-rules',
+        path: 'packs/react-shadcn',
+        ref: 'v0.1.0',
+        commit: 'commit-sha-123',
+      })
+    })
+  })
+})
+
+function createInstallerGitHubMockFetch(): typeof fetch {
+  return (async (input: string | URL | Request) => {
+    const url = String(input)
+
+    if (url === 'https://api.github.com/repos/baicie/ai-rules/commits/v0.1.0') {
+      return createInstallerJsonResponse({
+        sha: 'commit-sha-123',
+        commit: {
+          tree: {
+            sha: 'tree-sha-123',
+          },
+        },
+      })
+    }
+
+    if (
+      url ===
+      'https://api.github.com/repos/baicie/ai-rules/git/trees/tree-sha-123?recursive=1'
+    ) {
+      return createInstallerJsonResponse({
+        truncated: false,
+        tree: [
+          {
+            path: 'packs/react-shadcn/airules.pack.json',
+            type: 'blob',
+            sha: 'blob-pack',
+          },
+          {
+            path: 'packs/react-shadcn/modules/core.md',
+            type: 'blob',
+            sha: 'blob-core',
+          },
+        ],
+      })
+    }
+
+    if (
+      url === 'https://api.github.com/repos/baicie/ai-rules/git/blobs/blob-pack'
+    ) {
+      return createInstallerJsonResponse({
+        encoding: 'base64',
+        content: Buffer.from(
+          JSON.stringify({
+            name: '@baicie/react-shadcn',
+            version: '0.1.0',
+            modules: {
+              core: 'modules/core.md',
+            },
+            installs: [
+              {
+                id: 'codex',
+                agent: 'codex',
+                target: 'AGENTS.md',
+                mode: 'modules',
+                concat: ['core'],
+                merge: 'managed-block',
+              },
+            ],
+          }),
+        ).toString('base64'),
+      })
+    }
+
+    if (
+      url === 'https://api.github.com/repos/baicie/ai-rules/git/blobs/blob-core'
+    ) {
+      return createInstallerJsonResponse({
+        encoding: 'base64',
+        content: Buffer.from('## Core\n\n- From GitHub.').toString('base64'),
+      })
+    }
+
+    return createInstallerJsonResponse(
+      {
+        message: `Unexpected URL: ${url}`,
+      },
+      404,
+    )
+  }) as typeof fetch
+}
+
+function createInstallerJsonResponse(body: unknown, status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 200 ? 'OK' : 'Not Found',
+    json: async () => body,
+    text: async () => JSON.stringify(body),
+  } as Response
+}

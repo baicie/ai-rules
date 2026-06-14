@@ -98,6 +98,12 @@ function isCliEntry(metaUrl: string, argv1: string | undefined): boolean {
 }
 
 if (isCliEntry(import.meta.url, process.argv[1])) {
+  process.on('unhandledRejection', reason => {
+    const message = reason instanceof Error ? reason.message : String(reason)
+    console.error(message)
+    process.exitCode = 1
+  })
+
   try {
     runCli()
   } catch (error) {

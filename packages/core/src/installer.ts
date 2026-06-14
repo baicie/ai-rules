@@ -5,6 +5,7 @@ import type {
   AirulesLockPack,
   MergeStrategy,
 } from '@baicie/airules-schema'
+import type { ResolvedPackSource } from './source'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { sha256 } from './hash'
@@ -17,9 +18,9 @@ import { createManagedBlock, upsertManagedBlock } from './managed-block'
 import { renderModules } from './module-renderer'
 import { loadLocalPack } from './pack-loader'
 import { selectInstalls } from './profile'
-import { resolveLocalPackSource } from './source'
+import { resolveLocalPackSource, resolvePackSource } from './source'
 
-export interface InstallLocalPackOptions {
+export interface InstallPackOptions {
   cwd: string
   source: string
   profile?: string
@@ -40,17 +41,31 @@ export interface InstallOperation {
   contentHash: string
 }
 
-export interface InstallLocalPackResult {
+export interface InstallPackResult {
   packName: string
   packVersion: string
   source: string
   operations: InstallOperation[]
 }
 
+export async function installPack(
+  options: InstallPackOptions,
+): Promise<InstallPackResult> {
+  const resolvedSource = await resolvePackSource(options.source, options.cwd)
+  return installResolvedPack(options, resolvedSource)
+}
+
 export function installLocalPack(
-  options: InstallLocalPackOptions,
-): InstallLocalPackResult {
+  options: InstallPackOptions,
+): InstallPackResult {
   const resolvedSource = resolveLocalPackSource(options.source, options.cwd)
+  return installResolvedPack(options, resolvedSource)
+}
+
+function installResolvedPack(
+  options: InstallPackOptions,
+  resolvedSource: ResolvedPackSource,
+): InstallPackResult {
   const loaded = loadLocalPack(resolvedSource)
   const installs = selectInstalls(loaded.pack, {
     profile: options.profile,
@@ -68,7 +83,7 @@ export function installLocalPack(
   const dryRun = options.dryRun === true
 
   for (const install of installs) {
-    assertPhase1SupportedInstall(install)
+    assertPhase2SupportedInstall(install)
 
     const rendered = renderModules({
       pack: loaded.pack,
@@ -180,10 +195,10 @@ export function installLocalPack(
   }
 }
 
-function assertPhase1SupportedInstall(install: AirulesInstall): void {
+function assertPhase2SupportedInstall(install: AirulesInstall): void {
   if (install.mode !== 'modules') {
     throw new Error(
-      `Install "${install.id}" uses mode "${install.mode}". Phase 1 only supports modules mode.`,
+      `Install "${install.id}" uses mode "${install.mode}". Phase 2 only supports modules mode.`,
     )
   }
 
@@ -192,7 +207,7 @@ function assertPhase1SupportedInstall(install: AirulesInstall): void {
 
   if (merge !== 'managed-block') {
     throw new Error(
-      `Install "${install.id}" uses merge "${merge}". Phase 1 only supports managed-block merge.`,
+      `Install "${install.id}" uses merge "${merge}". Phase 2 only supports managed-block merge.`,
     )
   }
 }

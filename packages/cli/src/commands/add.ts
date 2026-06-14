@@ -1,8 +1,9 @@
 import type { AgentName, AirulesConfig } from '@baicie/airules-schema'
 import {
-  installLocalPack,
+  installPack,
   loadAirulesConfigSync,
   upsertConfigPack,
+  validateSourceSecurity,
   writeAirulesConfig,
 } from '@baicie/airules-core'
 
@@ -17,32 +18,41 @@ export interface AddCommandOptions {
 
 export function runAddCommand(options: AddCommandOptions): void {
   const agents = parseAgentList(options.agent)
+  const config = loadConfigOrCreateEmpty(options.cwd)
+  const securityResult = validateSourceSecurity(options.source, config.security)
 
-  const result = installLocalPack({
+  for (const warning of securityResult.warnings) {
+    console.warn(`warning: ${warning}`)
+  }
+
+  installPack({
     cwd: options.cwd,
     source: options.source,
     profile: options.profile,
     agents,
     dryRun: options.dryRun === true,
-  })
+  }).then(
+    result => {
+      printInstallSummary(result.operations, options.dryRun === true)
 
-  printInstallSummary(result.operations, options.dryRun === true)
+      if (options.dryRun === true || options.save === false) {
+        return
+      }
 
-  if (options.dryRun === true || options.save === false) {
-    return
-  }
+      const nextConfig = upsertConfigPack(config, {
+        name: result.packName,
+        source: options.source,
+        profile: options.profile,
+        agents,
+      })
 
-  const config = loadConfigOrCreateEmpty(options.cwd)
-  const nextConfig = upsertConfigPack(config, {
-    name: result.packName,
-    source: options.source,
-    profile: options.profile,
-    agents,
-  })
-
-  writeAirulesConfig(options.cwd, nextConfig)
-
-  console.info(`Saved pack config for ${result.packName}.`)
+      writeAirulesConfig(options.cwd, nextConfig)
+      console.info(`Saved pack config for ${result.packName}.`)
+    },
+    (error: unknown) => {
+      throw error instanceof Error ? error : new Error(String(error))
+    },
+  )
 }
 
 function parseAgentList(agent: string | undefined): AgentName[] | undefined {
