@@ -9,7 +9,7 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { installLocalPack } from './installer'
+import { createDryRunBlockForOperation, installLocalPack } from './installer'
 import { readAirulesLockfile } from './lockfile'
 
 let currentTmpDir: string | null = null
@@ -236,5 +236,69 @@ describe('installLocalPack', () => {
         agents: ['codex'],
       }),
     ).toThrow(/Phase 1 only supports managed-block merge/)
+  })
+
+  it('returns stable dry-run managed block content', () => {
+    const cwd = createTempProject()
+
+    const result = installLocalPack({
+      cwd,
+      source: './packs/react-shadcn',
+      agents: ['codex'],
+      dryRun: true,
+    })
+
+    const operation = result.operations[0]
+    expect(operation).toBeDefined()
+    if (!operation) {
+      return
+    }
+    expect(operation.managedBlock).toContain('install="codex"')
+    expect(operation.managedBlock).toContain('## Core')
+    expect(operation.managedBlock).toContain('## shadcn')
+    expect(operation.managedBlock).not.toContain('# AGENTS.md')
+  })
+
+  it('marks unchanged when running same install twice', () => {
+    const cwd = createTempProject()
+
+    installLocalPack({
+      cwd,
+      source: './packs/react-shadcn',
+      agents: ['codex'],
+    })
+
+    const result = installLocalPack({
+      cwd,
+      source: './packs/react-shadcn',
+      agents: ['codex'],
+    })
+
+    expect(result.operations[0] && result.operations[0].action).toBe(
+      'unchanged',
+    )
+  })
+
+  it('createDryRunBlockForOperation returns the generated managed block only', () => {
+    const cwd = createTempProject()
+
+    const result = installLocalPack({
+      cwd,
+      source: './packs/react-shadcn',
+      agents: ['codex'],
+      dryRun: true,
+    })
+
+    const operation = result.operations[0]
+    expect(operation).toBeDefined()
+    if (!operation) {
+      return
+    }
+
+    const block = createDryRunBlockForOperation(operation)
+
+    expect(block).toBe(operation.managedBlock)
+    expect(block).toContain('<!-- airules:start')
+    expect(block).toContain('## Core')
   })
 })

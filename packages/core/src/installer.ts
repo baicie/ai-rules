@@ -35,6 +35,8 @@ export interface InstallOperation {
   action: 'create' | 'update' | 'unchanged'
   previousContent: string
   nextContent: string
+  renderedContent: string
+  managedBlock: string
   contentHash: string
 }
 
@@ -75,6 +77,16 @@ export function installLocalPack(
     })
 
     const contentHash = sha256(rendered.content)
+    const managedBlock = createManagedBlock(
+      {
+        pack: loaded.pack.name,
+        install: install.id,
+        version: loaded.pack.version,
+        hash: contentHash,
+      },
+      rendered.content,
+    )
+
     const targetPath = resolve(options.cwd, install.target)
     const previousContent = existsSync(targetPath)
       ? readFileSync(targetPath, 'utf8')
@@ -107,6 +119,8 @@ export function installLocalPack(
       action,
       previousContent,
       nextContent,
+      renderedContent: rendered.content,
+      managedBlock,
       contentHash,
     })
 
@@ -202,15 +216,5 @@ function getWriteAction(
 export function createDryRunBlockForOperation(
   operation: InstallOperation,
 ): string {
-  const block = createManagedBlock(
-    {
-      pack: operation.pack,
-      install: operation.installId,
-      version: 'dry-run',
-      hash: operation.contentHash,
-    },
-    operation.nextContent,
-  )
-
-  return block
+  return operation.managedBlock
 }

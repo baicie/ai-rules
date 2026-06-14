@@ -1,4 +1,8 @@
-import type { AirulesConfig, AirulesConfigPack } from '@baicie/airules-schema'
+import type {
+  AgentName,
+  AirulesConfig,
+  AirulesConfigPack,
+} from '@baicie/airules-schema'
 import { mkdirSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { getAirulesAgentDir, resolveAirulesConfigPath } from './config-loader'
@@ -24,63 +28,87 @@ export function upsertConfigPack(
     nextPacks.push(packEntry)
   } else {
     const previous = nextPacks[index]
-    const mergedVariables = mergeVariables(previous, packEntry)
-
-    nextPacks[index] = {
-      source: packEntry.source,
-    }
-    const updated = nextPacks[index]
-
-    if (packEntry.name !== undefined) {
-      updated.name = packEntry.name
-    } else if (previous && previous.name !== undefined) {
-      updated.name = previous.name
-    }
-
-    if (packEntry.profile !== undefined) {
-      updated.profile = packEntry.profile
-    } else if (previous && previous.profile !== undefined) {
-      updated.profile = previous.profile
-    }
-
-    if (packEntry.agents !== undefined) {
-      updated.agents = packEntry.agents
-    } else if (previous && previous.agents !== undefined) {
-      updated.agents = previous.agents
-    }
-
-    if (mergedVariables !== undefined) {
-      updated.variables = mergedVariables
-    }
+    nextPacks[index] = mergeConfigPack(previous, packEntry)
   }
 
   return {
     version: 1,
+    $schema: config.$schema,
+    install: config.install,
+    security: config.security,
     packs: nextPacks,
   }
 }
 
-function mergeVariables(
+function mergeConfigPack(
   previous: AirulesConfigPack | undefined,
-  packEntry: AirulesConfigPack,
-): Record<string, unknown> | undefined {
-  const previousVariables =
-    previous && previous.variables ? previous.variables : {}
-  const nextVariables = packEntry.variables ? packEntry.variables : {}
+  incoming: AirulesConfigPack,
+): AirulesConfigPack {
+  const next: AirulesConfigPack = {
+    source: incoming.source,
+  }
 
-  if (
-    Object.keys(previousVariables).length === 0 &&
-    Object.keys(nextVariables).length === 0
-  ) {
+  if (incoming.name !== undefined) {
+    next.name = incoming.name
+  } else if (previous && previous.name !== undefined) {
+    next.name = previous.name
+  }
+
+  if (incoming.profile !== undefined) {
+    next.profile = incoming.profile
+  } else if (previous && previous.profile !== undefined) {
+    next.profile = previous.profile
+  }
+
+  const agents = mergeAgents(previous && previous.agents, incoming.agents)
+  if (agents !== undefined) {
+    next.agents = agents
+  }
+
+  const variables = mergeVariables(
+    previous && previous.variables,
+    incoming.variables,
+  )
+  if (variables !== undefined) {
+    next.variables = variables
+  }
+
+  return next
+}
+
+function mergeAgents(
+  previous: AgentName[] | undefined,
+  incoming: AgentName[] | undefined,
+): AgentName[] | undefined {
+  if (!previous && !incoming) {
+    return undefined
+  }
+
+  const result = new Set<AgentName>()
+  for (const agent of previous !== undefined ? previous : []) {
+    result.add(agent)
+  }
+  for (const agent of incoming !== undefined ? incoming : []) {
+    result.add(agent)
+  }
+
+  return Array.from(result)
+}
+
+function mergeVariables(
+  previous: Record<string, unknown> | undefined,
+  incoming: Record<string, unknown> | undefined,
+): Record<string, unknown> | undefined {
+  if (!previous && !incoming) {
     return undefined
   }
 
   const merged: Record<string, unknown> = {}
-  for (const key of Object.keys(previousVariables)) {
-    merged[key] = previousVariables[key]
+  for (const key of Object.keys(previous !== undefined ? previous : {})) {
+    merged[key] = (previous !== undefined ? previous : {})[key]
   }
-  for (const key of Object.keys(nextVariables)) {
-    merged[key] = nextVariables[key]
+  for (const key of Object.keys(incoming !== undefined ? incoming : {})) {
+    merged[key] = (incoming !== undefined ? incoming : {})[key]
   }
 
   return merged

@@ -43,8 +43,8 @@ export function runDiffCommand(options: DiffCommandOptions): void {
         continue
       }
 
-      console.info('\nnext content:\n')
-      console.info(operation.nextContent)
+      console.info('\nmanaged block:\n')
+      console.info(operation.managedBlock)
     }
   }
 }
