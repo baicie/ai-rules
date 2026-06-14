@@ -17,7 +17,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {
-      "@baicie/*": ["../packages/*/src"]
+      "@baicie/airules-schema": ["../packages/schema/src/index.ts"],
+      "@baicie/airules-core": ["../packages/core/src/index.ts"],
+      "@baicie/airules": ["../packages/cli/src/index.ts"]
     },
     "resolveJsonModule": true,
     /* 类型检查 */

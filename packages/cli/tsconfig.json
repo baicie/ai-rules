@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "baseUrl": "..",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@baicie/airules-schema": ["schema/src/index.ts"],
+      "@baicie/airules-core": ["core/src/index.ts"]
+    },
+    "resolveJsonModule": true,
+    "types": ["node"],
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "declaration": true,
+    "newLine": "LF",
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedDeclarations": false,
+    "isolatedModules": true,
+    "skipLibCheck": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["dist", "node_modules", "src/**/*.test.ts"]
+}
