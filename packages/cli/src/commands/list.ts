@@ -6,9 +6,7 @@ export interface ListCommandOptions {
   cwd: string
 }
 
-export async function runListCommand(
-  options: ListCommandOptions,
-): Promise<void> {
+export function runListCommand(options: ListCommandOptions): void {
   const lockPath = getAirulesLockPath(options.cwd)
 
   if (!existsSync(lockPath)) {
@@ -33,7 +31,7 @@ export async function runListCommand(
     if (pack.profile) {
       console.info(`  profile: ${pack.profile}`)
     }
-    if (pack.agents?.length) {
+    if (pack.agents && pack.agents.length > 0) {
       console.info(`  agents: ${pack.agents.join(', ')}`)
     }
   }

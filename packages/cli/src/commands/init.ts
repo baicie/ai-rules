@@ -13,9 +13,7 @@ export interface InitCommandOptions {
   force?: boolean
 }
 
-export async function runInitCommand(
-  options: InitCommandOptions,
-): Promise<void> {
+export function runInitCommand(options: InitCommandOptions): void {
   const agentDir = join(options.cwd, AIRULES_AGENT_DIR)
   const cacheDir = join(agentDir, AIRULES_CACHE_DIRNAME)
   const stagedDir = join(agentDir, AIRULES_STAGED_DIRNAME)

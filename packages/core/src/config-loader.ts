@@ -42,6 +42,20 @@ export function resolveAirulesConfigPath(
   return null
 }
 
+export function loadAirulesConfigSync(cwd = process.cwd()): AirulesConfig {
+  const resolvedConfig = resolveAirulesConfigPath(cwd)
+
+  if (!resolvedConfig) {
+    throw new Error(
+      `Cannot find airules config under ${AIRULES_AGENT_DIR}. Run airules init first.`,
+    )
+  }
+
+  const rawConfig = loadConfigFileSync(resolvedConfig.path)
+
+  return AirulesConfigSchema.parse(rawConfig)
+}
+
 export async function loadAirulesConfig(
   cwd = process.cwd(),
 ): Promise<AirulesConfig> {
@@ -56,6 +70,20 @@ export async function loadAirulesConfig(
   const rawConfig = await loadConfigFile(resolvedConfig.path)
 
   return AirulesConfigSchema.parse(rawConfig)
+}
+
+function loadConfigFileSync(configPath: string): unknown {
+  if (configPath.endsWith('.json')) {
+    return JSON.parse(readFileSync(configPath, 'utf8'))
+  }
+
+  const jiti = createJiti(import.meta.url, {
+    interopDefault: true,
+  })
+
+  const loaded = jiti(pathToFileURL(resolve(configPath)).href)
+
+  return unwrapDefault(loaded)
 }
 
 async function loadConfigFile(configPath: string): Promise<unknown> {

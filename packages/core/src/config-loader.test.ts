@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import {
   getAirulesAgentDir,
   getAirulesLockPath,
-  loadAirulesConfig,
+  loadAirulesConfigSync,
   resolveAirulesConfigPath,
 } from './config-loader'
 
@@ -55,7 +55,7 @@ describe('config-loader', () => {
     expect(resolved && resolved.filename).toBe('airules.config.json')
   })
 
-  it('loads json config', async () => {
+  it('loads json config synchronously', () => {
     const cwd = createTempProject()
 
     writeFileSync(
@@ -74,7 +74,7 @@ describe('config-loader', () => {
       }),
     )
 
-    const config = await loadAirulesConfig(cwd)
+    const config = loadAirulesConfigSync(cwd)
 
     expect(config.version).toBe(1)
     expect(config.packs[0] && config.packs[0].source).toBe(
@@ -82,7 +82,7 @@ describe('config-loader', () => {
     )
   })
 
-  it('loads TypeScript config', async () => {
+  it('loads TypeScript config synchronously', () => {
     const cwd = createTempProject()
 
     writeFileSync(
@@ -104,7 +104,7 @@ export default {
 `,
     )
 
-    const config = await loadAirulesConfig(cwd)
+    const config = loadAirulesConfigSync(cwd)
 
     expect(config.version).toBe(1)
     const first = config.packs[0]
@@ -112,10 +112,10 @@ export default {
     expect(first && first.agents).toEqual(['codex', 'cursor'])
   })
 
-  it('throws when config does not exist', async () => {
+  it('throws when config does not exist', () => {
     const cwd = createTempProject()
 
-    await expect(loadAirulesConfig(cwd)).rejects.toThrow(
+    expect(() => loadAirulesConfigSync(cwd)).toThrow(
       /Cannot find airules config/,
     )
   })

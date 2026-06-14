@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import process from 'node:process'
 import {
   getAirulesLockPath,
-  loadAirulesConfig,
+  loadAirulesConfigSync,
   resolveAirulesConfigPath,
 } from '@baicie/airules-core'
 import { AirulesLockfileSchema } from '@baicie/airules-schema'
@@ -11,9 +11,7 @@ export interface DoctorCommandOptions {
   cwd: string
 }
 
-export async function runDoctorCommand(
-  options: DoctorCommandOptions,
-): Promise<void> {
+export function runDoctorCommand(options: DoctorCommandOptions): void {
   const resolvedConfig = resolveAirulesConfigPath(options.cwd)
 
   if (!resolvedConfig) {
@@ -27,7 +25,7 @@ export async function runDoctorCommand(
   console.info(`✔ Config found: ${resolvedConfig.path}`)
 
   try {
-    await loadAirulesConfig(options.cwd)
+    loadAirulesConfigSync(options.cwd)
     console.info('✔ Config schema valid')
   } catch (error) {
     console.info('✖ Config schema invalid')
