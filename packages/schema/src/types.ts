@@ -142,6 +142,11 @@ export interface AirulesLockPack {
   hash: string
 }
 
+export interface AirulesLockInstallFile {
+  target: string
+  contentHash: string
+}
+
 export interface AirulesLockInstall {
   pack: string
   installId: string
@@ -151,6 +156,7 @@ export interface AirulesLockInstall {
   merge?: MergeStrategy
   modules?: string[]
   blocks?: string[]
+  files?: AirulesLockInstallFile[]
   contentHash: string
   managedBlockId?: string
 }

@@ -1,0 +1,44 @@
+{
+  "name": "@baicie/react-shadcn",
+  "version": "0.1.0",
+  "profiles": {
+    "default": {
+      "installs": ["codex", "cursor", "skill"],
+      "variables": {
+        "packageManager": "pnpm",
+        "requireTests": true
+      }
+    }
+  },
+  "blocks": {
+    "core": "blocks/core.md",
+    "shadcn": "blocks/shadcn.md",
+    "testing": "blocks/testing.md"
+  },
+  "installs": [
+    {
+      "id": "codex",
+      "agent": "codex",
+      "target": "AGENTS.md",
+      "mode": "template",
+      "template": "templates/AGENTS.md.hbs",
+      "merge": "managed-block"
+    },
+    {
+      "id": "cursor",
+      "agent": "cursor",
+      "target": ".cursor/rules/shadcn.mdc",
+      "mode": "file",
+      "from": "files/.cursor/rules/shadcn.mdc",
+      "merge": "overwrite-managed"
+    },
+    {
+      "id": "skill",
+      "agent": "skill",
+      "target": ".agents/skills/shadcn-page",
+      "mode": "directory",
+      "from": "skills/shadcn-page",
+      "merge": "overwrite-managed"
+    }
+  ]
+}

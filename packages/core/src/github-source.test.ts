@@ -4,12 +4,12 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  assertInsideDirectory,
   getGitHubPackCacheRoot,
   normalizeGitHubPath,
   parseGitHubSource,
   resolveGitHubPackSource,
 } from './github-source'
+import { assertInsideDirectory } from './path-utils'
 
 let currentTmpDir: string | null = null
 
@@ -236,7 +236,7 @@ describe('github path safety', () => {
   it('rejects writes outside cache root', () => {
     expect(() =>
       assertInsideDirectory('/tmp/cache/root', '/tmp/cache/root-evil/file.md'),
-    ).toThrow(/Refusing to write outside cache root/)
+    ).toThrow(/Refusing to access path outside root/)
   })
 
   it('allows writes inside cache root', () => {

@@ -51,6 +51,7 @@ async function runOne(
     ...(pack.agents !== undefined
       ? { agents: pack.agents as AgentName[] }
       : {}),
+    ...(pack.variables !== undefined ? { variables: pack.variables } : {}),
     dryRun,
   })
 

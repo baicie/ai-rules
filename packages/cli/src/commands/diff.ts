@@ -1,5 +1,6 @@
 import type { AirulesConfigPack } from '@baicie/airules-schema'
 import {
+  createDryRunBlockForOperation,
   installPack,
   loadAirulesConfigSync,
   validateSourceSecurity,
@@ -48,6 +49,7 @@ async function runOne(cwd: string, pack: AirulesConfigPack): Promise<void> {
     source: pack.source,
     ...(pack.profile !== undefined ? { profile: pack.profile } : {}),
     ...(pack.agents !== undefined ? { agents: pack.agents } : {}),
+    ...(pack.variables !== undefined ? { variables: pack.variables } : {}),
     dryRun: true,
   })
 
@@ -63,6 +65,6 @@ async function runOne(cwd: string, pack: AirulesConfigPack): Promise<void> {
     }
 
     console.info('\nmanaged block:\n')
-    console.info(operation.managedBlock)
+    console.info(createDryRunBlockForOperation(operation))
   }
 }

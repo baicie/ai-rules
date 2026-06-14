@@ -16,7 +16,7 @@ export interface RenderedModules {
 export function renderModules(options: RenderModulesOptions): RenderedModules {
   if (options.install.mode !== 'modules') {
     throw new Error(
-      `Install "${options.install.id}" uses mode "${options.install.mode}", but Phase 2 only supports modules mode.`,
+      `Install "${options.install.id}" uses mode "${options.install.mode}", expected modules.`,
     )
   }
 

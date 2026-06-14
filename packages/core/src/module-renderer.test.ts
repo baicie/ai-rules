@@ -99,7 +99,7 @@ describe('renderModules', () => {
     ).toThrow(/references missing module "missing"/)
   })
 
-  it('throws for non-modules mode in Phase 1', () => {
+  it('throws for non-modules mode', () => {
     const root = createTempPackRoot()
 
     const pack: AirulesPack = {
@@ -128,6 +128,6 @@ describe('renderModules', () => {
         packRoot: root,
         install,
       }),
-    ).toThrow(/Phase 2 only supports modules mode/)
+    ).toThrow(/expected modules/)
   })
 })

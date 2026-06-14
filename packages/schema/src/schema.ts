@@ -183,6 +183,11 @@ export const AirulesLockPackSchema = z.object({
   hash: z.string().min(1),
 })
 
+export const AirulesLockInstallFileSchema = z.object({
+  target: z.string().min(1),
+  contentHash: z.string().min(1),
+})
+
 export const AirulesLockInstallSchema = z.object({
   pack: z.string().min(1),
   installId: z.string().min(1),
@@ -192,6 +197,7 @@ export const AirulesLockInstallSchema = z.object({
   merge: MergeStrategySchema.optional(),
   modules: z.array(z.string()).optional(),
   blocks: z.array(z.string()).optional(),
+  files: z.array(AirulesLockInstallFileSchema).optional(),
   contentHash: z.string().min(1),
   managedBlockId: z.string().optional(),
 })

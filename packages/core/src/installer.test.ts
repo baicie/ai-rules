@@ -220,7 +220,7 @@ describe('installLocalPack', () => {
     expect(agents).toContain('- Updated rule.')
   })
 
-  it('rejects non-managed-block merge in Phase 1', () => {
+  it('supports overwrite-managed merge in Phase 3', () => {
     const cwd = createTempProject()
     const packPath = join(cwd, 'packs/react-shadcn/airules.pack.json')
     const raw = readFileSync(packPath, 'utf8')
@@ -234,13 +234,13 @@ describe('installLocalPack', () => {
 
     writeFileSync(packPath, JSON.stringify(pack, null, 2))
 
-    expect(() =>
-      installLocalPack({
-        cwd,
-        source: './packs/react-shadcn',
-        agents: ['codex'],
-      }),
-    ).toThrow(/Phase 2 only supports managed-block merge/)
+    const result = installLocalPack({
+      cwd,
+      source: './packs/react-shadcn',
+      agents: ['codex'],
+    })
+
+    expect(result.operations[0] && result.operations[0].action).toBe('create')
   })
 
   it('returns stable dry-run managed block content', () => {

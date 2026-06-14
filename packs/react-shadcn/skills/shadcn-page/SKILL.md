@@ -1,0 +1,5 @@
+---
+name: shadcn-page
+---
+
+# Skill

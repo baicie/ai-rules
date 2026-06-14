@@ -1,6 +1,10 @@
 import type { AirulesConfig, AirulesPack } from './index'
 import { describe, expect, it } from 'vitest'
-import { AirulesConfigSchema, AirulesPackSchema } from './index'
+import {
+  AirulesConfigSchema,
+  AirulesLockfileSchema,
+  AirulesPackSchema,
+} from './index'
 
 describe('airulesPackSchema', () => {
   it('parses a modules install pack', () => {
@@ -88,5 +92,35 @@ describe('airulesConfigSchema', () => {
     }
 
     expect(AirulesConfigSchema.parse(config)).toEqual(config)
+  })
+})
+
+describe('airulesLockfileSchema', () => {
+  it('parses lock install files', () => {
+    const lockfile = {
+      lockfileVersion: 1,
+      generatedAt: '2026-06-14T00:00:00.000Z',
+      airulesVersion: '0.0.0',
+      packs: [],
+      installs: [
+        {
+          pack: '@baicie/react-shadcn',
+          installId: 'cursor',
+          agent: 'cursor',
+          target: '.cursor/rules/shadcn.mdc',
+          mode: 'file',
+          merge: 'overwrite-managed',
+          files: [
+            {
+              target: '.cursor/rules/shadcn.mdc',
+              contentHash: 'sha256-file',
+            },
+          ],
+          contentHash: 'sha256-install',
+        },
+      ],
+    }
+
+    expect(() => AirulesLockfileSchema.parse(lockfile)).not.toThrow()
   })
 })

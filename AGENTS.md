@@ -393,3 +393,19 @@ refactor(parser): simplify AST node creation
 ## 特别说明
 
 如果使用 AI 编程助手（如 Cursor）进行开发，请在提交 PR 时在末尾标注：`> Submitted by Cursor`
+
+<!-- airules:start pack="@baicie/react-shadcn" install="codex" version="0.1.0" hash="sha256-3cb5c67868cf26a0ec7b51121b84b708cf35b1b1238dba6734d36da5b2f34d7f" -->
+
+## Core
+
+- Use TypeScript.
+
+## shadcn
+
+- Use shadcn/ui components.
+  package=pnpm
+
+## Testing
+
+- Run `pnpm test`.
+<!-- airules:end pack="@baicie/react-shadcn" install="codex" -->

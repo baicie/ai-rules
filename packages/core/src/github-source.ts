@@ -381,7 +381,7 @@ function sanitizePathSegment(value: string): string {
   return value.replace(/[^\w.-]/g, '_')
 }
 
-export function assertInsideDirectory(root: string, target: string): void {
+function assertInsideDirectory(root: string, target: string): void {
   const resolvedRoot = resolve(root)
   const resolvedTarget = resolve(target)
   const relativePath = relative(resolvedRoot, resolvedTarget)
