@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  assertInsideDirectory,
   getGitHubPackCacheRoot,
+  normalizeGitHubPath,
   parseGitHubSource,
   resolveGitHubPackSource,
 } from './github-source'
@@ -223,3 +225,23 @@ function createJsonResponse(body: unknown, status = 200): Response {
     text: async () => JSON.stringify(body),
   } as Response
 }
+
+describe('github path safety', () => {
+  it('rejects dot-dot path segments', () => {
+    expect(() => normalizeGitHubPath('packs/../evil')).toThrow(
+      /Invalid GitHub path segment/,
+    )
+  })
+
+  it('rejects writes outside cache root', () => {
+    expect(() =>
+      assertInsideDirectory('/tmp/cache/root', '/tmp/cache/root-evil/file.md'),
+    ).toThrow(/Refusing to write outside cache root/)
+  })
+
+  it('allows writes inside cache root', () => {
+    expect(() =>
+      assertInsideDirectory('/tmp/cache/root', '/tmp/cache/root/file.md'),
+    ).not.toThrow()
+  })
+})

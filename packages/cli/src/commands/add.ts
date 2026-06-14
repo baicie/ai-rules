@@ -16,7 +16,7 @@ export interface AddCommandOptions {
   save?: boolean
 }
 
-export function runAddCommand(options: AddCommandOptions): void {
+export async function runAddCommand(options: AddCommandOptions): Promise<void> {
   const agents = parseAgentList(options.agent)
   const config = loadConfigOrCreateEmpty(options.cwd)
   const securityResult = validateSourceSecurity(options.source, config.security)
@@ -25,34 +25,29 @@ export function runAddCommand(options: AddCommandOptions): void {
     console.warn(`warning: ${warning}`)
   }
 
-  installPack({
+  const result = await installPack({
     cwd: options.cwd,
     source: options.source,
-    profile: options.profile,
-    agents,
+    ...(options.profile !== undefined ? { profile: options.profile } : {}),
+    ...(agents !== undefined ? { agents } : {}),
     dryRun: options.dryRun === true,
-  }).then(
-    result => {
-      printInstallSummary(result.operations, options.dryRun === true)
+  })
 
-      if (options.dryRun === true || options.save === false) {
-        return
-      }
+  printInstallSummary(result.operations, options.dryRun === true)
 
-      const nextConfig = upsertConfigPack(config, {
-        name: result.packName,
-        source: options.source,
-        profile: options.profile,
-        agents,
-      })
+  if (options.dryRun === true || options.save === false) {
+    return
+  }
 
-      writeAirulesConfig(options.cwd, nextConfig)
-      console.info(`Saved pack config for ${result.packName}.`)
-    },
-    (error: unknown) => {
-      throw error instanceof Error ? error : new Error(String(error))
-    },
-  )
+  const nextConfig = upsertConfigPack(config, {
+    name: result.packName,
+    source: options.source,
+    ...(options.profile !== undefined ? { profile: options.profile } : {}),
+    ...(agents !== undefined ? { agents } : {}),
+  })
+
+  writeAirulesConfig(options.cwd, nextConfig)
+  console.info(`Saved pack config for ${result.packName}.`)
 }
 
 function parseAgentList(agent: string | undefined): AgentName[] | undefined {

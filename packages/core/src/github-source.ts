@@ -1,7 +1,7 @@
 import type { AirulesResolvedSource } from '@baicie/airules-schema'
 import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, join } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import { getAirulesAgentDir } from './config-loader'
 import { sha256 } from './hash'
@@ -77,6 +77,7 @@ export async function resolveGitHubPackSource(
 
   await downloadGitHubPackToCache({
     parsed,
+    ref,
     treeSha,
     cacheRoot,
   })
@@ -145,14 +146,18 @@ export function parseGitHubSource(source: string): ParsedGitHubSource {
     )
   }
 
+  const path = normalizeGitHubPath(pathSegments.join('/'))
+
   const result: ParsedGitHubSource = {
     owner,
     repo,
-    path: normalizeGitHubPath(pathSegments.join('/')),
+    path,
   }
+
   if (ref) {
     result.ref = ref
   }
+
   return result
 }
 
@@ -179,7 +184,7 @@ export function getGitHubPackCacheRoot(
     'github',
     sanitizePathSegment(options.owner),
     sanitizePathSegment(options.repo),
-    options.commit,
+    sanitizePathSegment(options.commit),
     pathHash,
   )
 }
@@ -209,6 +214,7 @@ async function fetchGitHubCommit(
 
 async function downloadGitHubPackToCache(options: {
   parsed: ParsedGitHubSource
+  ref: string
   treeSha: string
   cacheRoot: string
 }): Promise<void> {
@@ -225,6 +231,7 @@ async function downloadGitHubPackToCache(options: {
   const entries = tree.tree !== undefined ? tree.tree : []
   const packPath = normalizeGitHubPath(options.parsed.path)
   const fileEntries: GitHubTreeEntry[] = []
+
   for (const entry of entries) {
     if (entry.type === 'blob' && isInsidePackPath(entry.path, packPath)) {
       fileEntries.push(entry)
@@ -233,7 +240,7 @@ async function downloadGitHubPackToCache(options: {
 
   if (fileEntries.length === 0) {
     throw new Error(
-      `Cannot find files under "${packPath || '.'}" in ${options.parsed.owner}/${options.parsed.repo}.`,
+      `Cannot find files under "${packPath || '.'}" in ${options.parsed.owner}/${options.parsed.repo}@${options.ref}.`,
     )
   }
 
@@ -254,7 +261,14 @@ async function downloadGitHubPackToCache(options: {
     }
 
     const relativePath = stripPackPath(entry.path, packPath)
-    const targetPath = join(options.cacheRoot, relativePath)
+
+    if (!relativePath) {
+      throw new Error(
+        `Refusing to write empty GitHub entry path: ${entry.path}`,
+      )
+    }
+
+    const targetPath = resolve(options.cacheRoot, relativePath)
     assertInsideDirectory(options.cacheRoot, targetPath)
 
     const blob = await fetchGitHubJson<GitHubBlobResponse>(
@@ -311,13 +325,21 @@ function createGitHubHeaders(): Record<string, string> {
   return headers
 }
 
-function normalizeGitHubPath(value: string): string {
+export function normalizeGitHubPath(value: string): string {
   const segments: string[] = []
+
   for (const part of value.replace(/\\/g, '/').split('/')) {
-    if (part.length > 0) {
-      segments.push(part)
+    if (part.length === 0) {
+      continue
     }
+
+    if (part === '.' || part === '..') {
+      throw new Error(`Invalid GitHub path segment "${part}".`)
+    }
+
+    segments.push(part)
   }
+
   return segments.join('/')
 }
 
@@ -359,11 +381,16 @@ function sanitizePathSegment(value: string): string {
   return value.replace(/[^\w.-]/g, '_')
 }
 
-function assertInsideDirectory(root: string, target: string): void {
-  const normalizedRoot = join(root, '.')
-  const normalizedTarget = join(target)
+export function assertInsideDirectory(root: string, target: string): void {
+  const resolvedRoot = resolve(root)
+  const resolvedTarget = resolve(target)
+  const relativePath = relative(resolvedRoot, resolvedTarget)
 
-  if (!normalizedTarget.startsWith(normalizedRoot)) {
+  if (
+    relativePath === '' ||
+    relativePath.startsWith('..') ||
+    resolve(relativePath) === relativePath
+  ) {
     throw new Error(`Refusing to write outside cache root: ${target}`)
   }
 }

@@ -101,4 +101,64 @@ describe('lockfile', () => {
       'sha256-new',
     )
   })
+
+  it('merges pack agents when upserting the same pack', () => {
+    const lockfile = createEmptyLockfile()
+
+    const first = upsertLockEntries(
+      lockfile,
+      {
+        name: '@baicie/react-shadcn',
+        version: '0.1.0',
+        source: './packs/react-shadcn',
+        resolved: {
+          type: 'local',
+          path: '/repo/packs/react-shadcn',
+        },
+        agents: ['codex'],
+        hash: 'sha256-pack',
+      },
+      [
+        {
+          pack: '@baicie/react-shadcn',
+          installId: 'codex',
+          agent: 'codex',
+          target: 'AGENTS.md',
+          mode: 'modules',
+          contentHash: 'sha256-codex',
+        },
+      ],
+    )
+
+    const second = upsertLockEntries(
+      first,
+      {
+        name: '@baicie/react-shadcn',
+        version: '0.1.0',
+        source: './packs/react-shadcn',
+        resolved: {
+          type: 'local',
+          path: '/repo/packs/react-shadcn',
+        },
+        agents: ['copilot'],
+        hash: 'sha256-pack',
+      },
+      [
+        {
+          pack: '@baicie/react-shadcn',
+          installId: 'copilot',
+          agent: 'copilot',
+          target: '.github/copilot-instructions.md',
+          mode: 'modules',
+          contentHash: 'sha256-copilot',
+        },
+      ],
+    )
+
+    expect(second.packs[0]?.agents).toEqual(['codex', 'copilot'])
+    expect(second.installs.map(install => install.installId)).toEqual([
+      'codex',
+      'copilot',
+    ])
+  })
 })

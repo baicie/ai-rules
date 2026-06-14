@@ -16,21 +16,21 @@ export function runCli(argv = process.argv): void {
   cli
     .command('init', 'Initialize airules in the current repository')
     .option('--force', 'Overwrite existing config and lock files')
-    .action((options: { force?: boolean }) => {
-      runInitCommand({
+    .action(async (options: { force?: boolean }) => {
+      await runInitCommand({
         cwd: process.cwd(),
         force: Boolean(options.force),
       })
     })
 
   cli
-    .command('add <source>', 'Install a local airules pack')
+    .command('add <source>', 'Install an airules pack')
     .option('--profile <profile>', 'Profile name')
     .option('--agent <agents>', 'Comma-separated agent names')
     .option('--dry-run', 'Preview changes without writing files')
     .option('--no-save', 'Do not save the pack into airules config')
     .action(
-      (
+      async (
         source: string,
         options: {
           profile?: string
@@ -39,7 +39,7 @@ export function runCli(argv = process.argv): void {
           save?: boolean
         },
       ) => {
-        runAddCommand({
+        await runAddCommand({
           cwd: process.cwd(),
           source,
           profile: options.profile,
@@ -53,8 +53,8 @@ export function runCli(argv = process.argv): void {
   cli
     .command('update [name]', 'Reinstall configured airules packs')
     .option('--dry-run', 'Preview changes without writing files')
-    .action((name: string | undefined, options: { dryRun?: boolean }) => {
-      runUpdateCommand({
+    .action(async (name: string | undefined, options: { dryRun?: boolean }) => {
+      await runUpdateCommand({
         cwd: process.cwd(),
         name,
         dryRun: Boolean(options.dryRun),
@@ -63,23 +63,23 @@ export function runCli(argv = process.argv): void {
 
   cli
     .command('diff [name]', 'Preview configured airules pack changes')
-    .action((name: string | undefined) => {
-      runDiffCommand({
+    .action(async (name: string | undefined) => {
+      await runDiffCommand({
         cwd: process.cwd(),
         name,
       })
     })
 
-  cli.command('doctor', 'Check airules configuration').action(() => {
-    runDoctorCommand({
+  cli.command('doctor', 'Check airules configuration').action(async () => {
+    await runDoctorCommand({
       cwd: process.cwd(),
     })
   })
 
   cli
     .command('list', 'List installed airules packs from lockfile')
-    .action(() => {
-      runListCommand({
+    .action(async () => {
+      await runListCommand({
         cwd: process.cwd(),
       })
     })

@@ -1,5 +1,4 @@
 import type { AirulesConfigPack } from '@baicie/airules-schema'
-import process from 'node:process'
 import {
   installPack,
   loadAirulesConfigSync,
@@ -11,7 +10,9 @@ export interface DiffCommandOptions {
   name?: string
 }
 
-export function runDiffCommand(options: DiffCommandOptions): void {
+export async function runDiffCommand(
+  options: DiffCommandOptions,
+): Promise<void> {
   const config = loadAirulesConfigSync(options.cwd)
   const packs = options.name
     ? config.packs.filter(
@@ -36,37 +37,32 @@ export function runDiffCommand(options: DiffCommandOptions): void {
 
   console.info('airules diff')
 
-  const work = packs.reduce<Promise<void>>(
-    (chain, pack) => chain.then(() => runOne(pack)),
-    Promise.resolve(),
-  )
-
-  work.catch((error: unknown) => {
-    throw error instanceof Error ? error : new Error(String(error))
-  })
+  for (const pack of packs) {
+    await runOne(options.cwd, pack)
+  }
 }
 
-function runOne(pack: AirulesConfigPack): Promise<void> {
-  return installPack({
-    cwd: process.cwd(),
+async function runOne(cwd: string, pack: AirulesConfigPack): Promise<void> {
+  const result = await installPack({
+    cwd,
     source: pack.source,
     ...(pack.profile !== undefined ? { profile: pack.profile } : {}),
     ...(pack.agents !== undefined ? { agents: pack.agents } : {}),
     dryRun: true,
-  }).then(result => {
-    console.info(`\n${result.packName}@${result.packVersion}`)
-
-    for (const operation of result.operations) {
-      console.info(`\n--- ${operation.target}`)
-      console.info(`action: ${operation.action}`)
-      console.info(`install: ${operation.agent}:${operation.installId}`)
-
-      if (operation.action === 'unchanged') {
-        continue
-      }
-
-      console.info('\nmanaged block:\n')
-      console.info(operation.managedBlock)
-    }
   })
+
+  console.info(`\n${result.packName}@${result.packVersion}`)
+
+  for (const operation of result.operations) {
+    console.info(`\n--- ${operation.target}`)
+    console.info(`action: ${operation.action}`)
+    console.info(`install: ${operation.agent}:${operation.installId}`)
+
+    if (operation.action === 'unchanged') {
+      continue
+    }
+
+    console.info('\nmanaged block:\n')
+    console.info(operation.managedBlock)
+  }
 }

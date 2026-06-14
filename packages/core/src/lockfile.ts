@@ -1,4 +1,5 @@
 import type {
+  AgentName,
   AirulesLockfile,
   AirulesLockInstall,
   AirulesLockPack,
@@ -47,13 +48,16 @@ export function upsertLockEntries(
   packEntry: AirulesLockPack,
   installEntries: AirulesLockInstall[],
 ): AirulesLockfile {
+  const previousPack = lockfile.packs.find(pack => pack.name === packEntry.name)
+  const mergedPack = mergeLockPackEntry(previousPack, packEntry)
+
   const nextPacks: AirulesLockPack[] = []
   for (const pack of lockfile.packs) {
     if (pack.name !== packEntry.name) {
       nextPacks.push(pack)
     }
   }
-  nextPacks.push(packEntry)
+  nextPacks.push(mergedPack)
 
   const selectedInstallIds = new Set(
     installEntries.map(install => `${install.pack}:${install.installId}`),
@@ -78,4 +82,52 @@ export function upsertLockEntries(
     packs: nextPacks,
     installs: nextInstalls,
   }
+}
+
+function mergeLockPackEntry(
+  previous: AirulesLockPack | undefined,
+  incoming: AirulesLockPack,
+): AirulesLockPack {
+  const mergedAgents = mergeAgents(previous?.agents, incoming.agents)
+
+  const result: AirulesLockPack = {
+    name: incoming.name,
+    version: incoming.version,
+    source: incoming.source,
+    resolved: incoming.resolved,
+    hash: incoming.hash,
+  }
+
+  if (incoming.profile !== undefined) {
+    result.profile = incoming.profile
+  } else if (previous?.profile !== undefined) {
+    result.profile = previous.profile
+  }
+
+  if (mergedAgents !== undefined) {
+    result.agents = mergedAgents
+  }
+
+  return result
+}
+
+function mergeAgents(
+  previous: AgentName[] | undefined,
+  incoming: AgentName[] | undefined,
+): AgentName[] | undefined {
+  if (!previous && !incoming) {
+    return undefined
+  }
+
+  const agents = new Set<AgentName>()
+
+  for (const agent of previous ?? []) {
+    agents.add(agent)
+  }
+
+  for (const agent of incoming ?? []) {
+    agents.add(agent)
+  }
+
+  return Array.from(agents)
 }

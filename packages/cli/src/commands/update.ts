@@ -1,5 +1,4 @@
 import type { AgentName, AirulesConfigPack } from '@baicie/airules-schema'
-import process from 'node:process'
 import {
   installPack,
   loadAirulesConfigSync,
@@ -12,7 +11,9 @@ export interface UpdateCommandOptions {
   dryRun?: boolean
 }
 
-export function runUpdateCommand(options: UpdateCommandOptions): void {
+export async function runUpdateCommand(
+  options: UpdateCommandOptions,
+): Promise<void> {
   const config = loadAirulesConfigSync(options.cwd)
   const packs = filterPacks(config.packs, options.name)
 
@@ -33,36 +34,33 @@ export function runUpdateCommand(options: UpdateCommandOptions): void {
 
   console.info(options.dryRun ? 'airules update dry-run' : 'airules update')
 
-  const dryRun = options.dryRun === true
-
-  const work = packs.reduce<Promise<void>>(
-    (chain, pack) => chain.then(() => runOne(pack, dryRun)),
-    Promise.resolve(),
-  )
-
-  work.catch((error: unknown) => {
-    throw error instanceof Error ? error : new Error(String(error))
-  })
+  for (const pack of packs) {
+    await runOne(options.cwd, pack, options.dryRun === true)
+  }
 }
 
-function runOne(pack: AirulesConfigPack, dryRun: boolean): Promise<void> {
-  return installPack({
-    cwd: process.cwd(),
+async function runOne(
+  cwd: string,
+  pack: AirulesConfigPack,
+  dryRun: boolean,
+): Promise<void> {
+  const result = await installPack({
+    cwd,
     source: pack.source,
     ...(pack.profile !== undefined ? { profile: pack.profile } : {}),
     ...(pack.agents !== undefined
       ? { agents: pack.agents as AgentName[] }
       : {}),
     dryRun,
-  }).then(result => {
-    console.info(`\n${result.packName}@${result.packVersion}`)
-
-    for (const operation of result.operations) {
-      console.info(
-        `- ${operation.action}: ${operation.target} (${operation.agent}:${operation.installId})`,
-      )
-    }
   })
+
+  console.info(`\n${result.packName}@${result.packVersion}`)
+
+  for (const operation of result.operations) {
+    console.info(
+      `- ${operation.action}: ${operation.target} (${operation.agent}:${operation.installId})`,
+    )
+  }
 }
 
 function filterPacks(
