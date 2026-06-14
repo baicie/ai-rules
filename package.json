@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "ai-rules",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.3.0",
@@ -7,20 +7,18 @@
     "node": ">=18.12.0"
   },
   "scripts": {
-    "dev": "echo dev",
-    "build": "echo build",
+    "build": "pnpm -r --filter './packages/**' build",
+    "dev": "pnpm -r --parallel --filter './packages/**' build --watch",
     "clean": "rimraf --glob packages/*/dist temp node_modules/.cache/.eslintcache node_modules/.cache/.prettiercache docs/.vitepress/dist",
-    "check": "tsc --incremental --noEmit",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm build",
+    "typecheck": "tsc --incremental --noEmit",
     "lint": "eslint --cache --cache-location node_modules/.cache/.eslintcache .",
     "lint-fix": "eslint --fix --cache --cache-location node_modules/.cache/.eslintcache .",
     "format": "prettier --write --cache --cache-location node_modules/.cache/.prettiercache .",
     "format-check": "prettier --check --cache --cache-location node_modules/.cache/.prettiercache .",
-    "test": "vitest",
-    "test-unit": "vitest --project unit*",
-    "test-e2e": "node scripts/build.js zeus -f global -d && vitest --project e2e",
-    "test-coverage": "vitest run --project unit* --coverage",
-    "release": "tsx scripts/release.ts",
-    "ci-publish": "tsx scripts/publish.ts",
+    "test": "vitest run",
+    "test-unit": "vitest run --project unit",
+    "test-coverage": "vitest run --project unit --coverage",
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",
     "docs:dev": "vitepress dev docs",
@@ -29,7 +27,6 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^9.0.0",
-    "@baicie/release": "^0.3.3",
     "@baicie/scripts": "^0.1.2",
     "@types/node": "^25.9.3",
     "eslint": "^10.5.0",
@@ -37,6 +34,7 @@
     "lint-staged": "^17.0.7",
     "picocolors": "^1.1.1",
     "prettier": "^3.8.4",
+    "rimraf": "^6.0.1",
     "simple-git-hooks": "^2.13.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.16",
@@ -44,7 +42,7 @@
     "vitest": "^4.1.8"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged && pnpm check",
+    "pre-commit": "pnpm lint-staged && pnpm typecheck",
     "commit-msg": "node -e \"import('@baicie/scripts').then(m => m.verifyCommit())\""
   },
   "lint-staged": {

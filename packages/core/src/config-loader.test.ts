@@ -52,7 +52,7 @@ describe('config-loader', () => {
 
     const resolved = resolveAirulesConfigPath(cwd)
 
-    expect(resolved?.filename).toBe('airules.config.json')
+    expect(resolved && resolved.filename).toBe('airules.config.json')
   })
 
   it('loads json config', async () => {
@@ -77,7 +77,39 @@ describe('config-loader', () => {
     const config = await loadAirulesConfig(cwd)
 
     expect(config.version).toBe(1)
-    expect(config.packs[0]?.source).toBe('./packs/react-shadcn')
+    expect(config.packs[0] && config.packs[0].source).toBe(
+      './packs/react-shadcn',
+    )
+  })
+
+  it('loads TypeScript config', async () => {
+    const cwd = createTempProject()
+
+    writeFileSync(
+      join(cwd, '.agents/agent/airules.config.ts'),
+      `
+export default {
+  version: 1,
+  packs: [
+    {
+      source: "./packs/react-shadcn",
+      profile: "strict",
+      agents: ["codex", "cursor"]
+    }
+  ],
+  security: {
+    allowScripts: false
+  }
+}
+`,
+    )
+
+    const config = await loadAirulesConfig(cwd)
+
+    expect(config.version).toBe(1)
+    const first = config.packs[0]
+    expect(first && first.profile).toBe('strict')
+    expect(first && first.agents).toEqual(['codex', 'cursor'])
   })
 
   it('throws when config does not exist', async () => {

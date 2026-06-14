@@ -1,4 +1,7 @@
+#!/usr/bin/env node
+import { resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { cac } from 'cac'
 import { runDoctorCommand } from './commands/doctor'
 import { runInitCommand } from './commands/init'
@@ -36,4 +39,14 @@ export function runCli(argv = process.argv): void {
   cli.parse(argv)
 }
 
-runCli()
+function isCliEntry(metaUrl: string, argv1: string | undefined): boolean {
+  if (!argv1) {
+    return false
+  }
+
+  return fileURLToPath(metaUrl) === resolve(argv1)
+}
+
+if (isCliEntry(import.meta.url, process.argv[1])) {
+  runCli()
+}

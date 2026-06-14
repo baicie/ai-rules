@@ -29,9 +29,7 @@ export function resolveProfile(
     throw new Error(`Profile "${profileName}" does not exist in ${pack.name}.`)
   }
 
-  const visited = new Set<string>()
-
-  return resolveProfileInner(profiles, profileName, visited)
+  return resolveProfileInner(profiles, profileName, new Set<string>())
 }
 
 function resolveProfileInner(
@@ -51,31 +49,46 @@ function resolveProfileInner(
 
   visited.add(profileName)
 
-  const baseInstalls = profile.extends
-    ? resolveProfileInner(profiles, profile.extends, visited).installs
-    : undefined
-
-  const baseVariables = profile.extends
-    ? resolveProfileInner(profiles, profile.extends, visited).variables
-    : {}
+  const base: ResolvedProfile = profile.extends
+    ? resolveProfileInner(profiles, profile.extends, visited)
+    : {
+        name: profileName,
+        variables: {},
+      }
 
   visited.delete(profileName)
 
-  const merged = mergeStringList(baseInstalls, profile.installs)
+  const mergedInstalls = mergeStringList(base.installs, profile.installs)
+  const profileVariables =
+    profile.variables !== undefined ? profile.variables : {}
 
   const result: ResolvedProfile = {
     name: profileName,
-    variables: {
-      ...baseVariables,
-      ...(profile.variables !== undefined ? profile.variables : {}),
-    },
+    variables: extendVariables(base.variables, profileVariables),
   }
 
-  if (merged !== undefined) {
-    result.installs = merged
+  if (mergedInstalls !== undefined) {
+    result.installs = mergedInstalls
   }
 
   return result
+}
+
+function extendVariables(
+  base: Record<string, unknown>,
+  current: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = {}
+
+  for (const key of Object.keys(base)) {
+    merged[key] = base[key]
+  }
+
+  for (const key of Object.keys(current)) {
+    merged[key] = current[key]
+  }
+
+  return merged
 }
 
 function mergeStringList(
@@ -87,14 +100,15 @@ function mergeStringList(
   }
 
   const result = new Set<string>()
-  const baseItems = base !== undefined ? base : []
-  const currentItems = current !== undefined ? current : []
-  for (const item of baseItems) {
+
+  for (const item of base !== undefined ? base : []) {
     result.add(item)
   }
-  for (const item of currentItems) {
+
+  for (const item of current !== undefined ? current : []) {
     result.add(item)
   }
+
   return Array.from(result)
 }
 
@@ -117,10 +131,12 @@ export function selectInstalls(
   const installIdSet = new Set<string>(selectedIds)
 
   const missingInstallIds: string[] = []
+
   for (const installId of installIdSet) {
     const exists = pack.installs.some(
       (install: AirulesInstall) => install.id === installId,
     )
+
     if (!exists) {
       missingInstallIds.push(installId)
     }

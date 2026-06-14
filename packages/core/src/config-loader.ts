@@ -1,8 +1,8 @@
 import type { AirulesConfig } from '@baicie/airules-schema'
 import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath, pathToFileURL } from 'node:url'
+import { pathToFileURL } from 'node:url'
 import { AirulesConfigSchema } from '@baicie/airules-schema'
 import { createJiti } from 'jiti'
 import {
@@ -63,11 +63,11 @@ async function loadConfigFile(configPath: string): Promise<unknown> {
     return JSON.parse(readFileSync(configPath, 'utf8'))
   }
 
-  const jiti = createJiti(toFileUrl(import.meta.url), {
+  const jiti = createJiti(import.meta.url, {
     interopDefault: true,
   })
 
-  const loaded = await jiti.import(toFileUrl(configPath), {
+  const loaded = await jiti.import(pathToFileURL(resolve(configPath)).href, {
     default: true,
   })
 
@@ -85,14 +85,4 @@ function unwrapDefault(value: unknown): unknown {
   }
 
   return value
-}
-
-function toFileUrl(target: string): string {
-  if (target.startsWith('file://')) {
-    return target
-  }
-  if (target.startsWith('file:') && !target.startsWith('file://')) {
-    return fileURLToPath(target)
-  }
-  return pathToFileURL(target).href
 }

@@ -1,31 +1,50 @@
-// these aliases are shared between vitest and rollup
-import { readdirSync, statSync } from 'node:fs'
+// these aliases are shared between vitest and build tooling
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-function resolveEntryForPkg(p: string): string {
-  return path.resolve(
-    fileURLToPath(import.meta.url),
-    `../../packages/${p}/src/index.ts`,
-  )
+const packagesDir = fileURLToPath(new URL('../packages/', import.meta.url))
+
+function resolveEntryForPkg(dir: string): string {
+  return path.resolve(packagesDir, dir, 'src/index.ts')
 }
 
-const dirs = readdirSync(new URL('../packages', import.meta.url))
+function readPackageName(dir: string): string | null {
+  const packageJsonPath = path.resolve(packagesDir, dir, 'package.json')
+
+  if (!existsSync(packageJsonPath)) {
+    return null
+  }
+
+  const raw = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+    name?: unknown
+  }
+
+  return typeof raw.name === 'string' && raw.name.length > 0 ? raw.name : null
+}
 
 const entries: Record<string, string> = {}
 
-const nonSrcPackages = ['dts-test']
+for (const dir of readdirSync(packagesDir)) {
+  const packageDir = path.resolve(packagesDir, dir)
 
-for (const dir of dirs) {
-  const key = `@vue/${dir}`
-  if (
-    dir !== 'vue'
-    && !nonSrcPackages.includes(dir)
-    && !(key in entries)
-    && statSync(new URL(`../packages/${dir}`, import.meta.url)).isDirectory()
-  ) {
-    entries[key] = resolveEntryForPkg(dir)
+  if (!statSync(packageDir).isDirectory()) {
+    continue
   }
+
+  const entry = resolveEntryForPkg(dir)
+
+  if (!existsSync(entry)) {
+    continue
+  }
+
+  const packageName = readPackageName(dir)
+
+  if (packageName === null) {
+    continue
+  }
+
+  entries[packageName] = entry
 }
 
 export { entries }

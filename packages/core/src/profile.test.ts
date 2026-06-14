@@ -67,6 +67,34 @@ describe('resolveProfile', () => {
       /Profile "missing" does not exist/,
     )
   })
+
+  it('throws for circular profile extends', () => {
+    const circularPack: AirulesPack = {
+      name: '@baicie/circular',
+      version: '0.1.0',
+      profiles: {
+        a: {
+          extends: 'b',
+        },
+        b: {
+          extends: 'a',
+        },
+      },
+      installs: [
+        {
+          id: 'codex',
+          agent: 'codex',
+          target: 'AGENTS.md',
+          mode: 'modules',
+          concat: ['core'],
+        },
+      ],
+    }
+
+    expect(() => resolveProfile(circularPack, 'a')).toThrow(
+      /Circular profile extends detected/,
+    )
+  })
 })
 
 describe('selectInstalls', () => {
@@ -89,5 +117,30 @@ describe('selectInstalls', () => {
     })
 
     expect(installs.map(install => install.id)).toEqual(['cursor'])
+  })
+
+  it('throws when profile references missing install id', () => {
+    const invalidPack: AirulesPack = {
+      name: '@baicie/invalid',
+      version: '0.1.0',
+      profiles: {
+        default: {
+          installs: ['missing'],
+        },
+      },
+      installs: [
+        {
+          id: 'codex',
+          agent: 'codex',
+          target: 'AGENTS.md',
+          mode: 'modules',
+          concat: ['core'],
+        },
+      ],
+    }
+
+    expect(() => selectInstalls(invalidPack)).toThrow(
+      /Profile references missing install ids: missing/,
+    )
   })
 })
