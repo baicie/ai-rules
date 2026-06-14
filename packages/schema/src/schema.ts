@@ -124,6 +124,30 @@ export const AirulesPackSchema = z.object({
     .optional(),
 })
 
+export const AirulesRegistryRefSchema = z.object({
+  name: z.string().optional(),
+  source: z.string().min(1),
+})
+
+export const AirulesRegistryPackSchema = z.object({
+  name: z.string().min(1),
+  source: z.string().min(1),
+  version: z.string().optional(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  aliases: z.array(z.string()).optional(),
+  deprecated: z.union([z.boolean(), z.string()]).optional(),
+  homepage: z.string().optional(),
+})
+
+export const AirulesRegistrySchema = z.object({
+  $schema: z.string().optional(),
+  name: z.string().optional(),
+  version: z.string().optional(),
+  description: z.string().optional(),
+  packs: z.array(AirulesRegistryPackSchema),
+})
+
 export const AirulesConfigPackSchema = z.object({
   name: z.string().optional(),
   source: z.string().min(1),
@@ -135,6 +159,9 @@ export const AirulesConfigPackSchema = z.object({
 export const AirulesConfigSchema = z.object({
   $schema: z.string().optional(),
   version: z.literal(1),
+
+  registries: z.array(AirulesRegistryRefSchema).optional(),
+
   packs: z.array(AirulesConfigPackSchema),
 
   install: z

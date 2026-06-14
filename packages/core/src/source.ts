@@ -1,9 +1,11 @@
 import type { AirulesResolvedSource } from '@baicie/airules-schema'
 import type { ResolvedGitHubPackSource } from './github-source'
+import type { ResolvedNpmPackSource } from './npm-source'
 import { isAbsolute, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isGitHubSource, resolveGitHubPackSource } from './github-source'
+import { isNpmSource, resolveNpmPackSource } from './npm-source'
 
 export interface ResolvedPackSource {
   source: string
@@ -18,6 +20,7 @@ export interface ResolvedLocalPackSource extends ResolvedPackSource {
 export type ResolvedAnyPackSource =
   | ResolvedLocalPackSource
   | ResolvedGitHubPackSource
+  | ResolvedNpmPackSource
 
 export async function resolvePackSource(
   source: string,
@@ -25,6 +28,10 @@ export async function resolvePackSource(
 ): Promise<ResolvedAnyPackSource> {
   if (isGitHubSource(source)) {
     return resolveGitHubPackSource(source, cwd)
+  }
+
+  if (isNpmSource(source)) {
+    return resolveNpmPackSource(source, cwd)
   }
 
   return resolveLocalPackSource(source, cwd)
@@ -39,11 +46,11 @@ export function resolveLocalPackSource(
   }
 
   if (source.startsWith('npm:')) {
-    throw new Error('npm source is not supported in Phase 2.')
+    throw new Error('Use resolvePackSource() for npm sources.')
   }
 
   if (source.startsWith('http://') || source.startsWith('https://')) {
-    throw new Error('http source is not supported in Phase 2.')
+    throw new Error('http source is not supported as direct pack source.')
   }
 
   const normalizedSource = source.startsWith('local:')

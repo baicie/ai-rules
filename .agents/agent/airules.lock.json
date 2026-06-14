@@ -1,53 +1,7 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-06-14T14:18:51.778Z",
+  "generatedAt": "2026-06-14T14:26:35.863Z",
   "airulesVersion": "0.0.0",
-  "packs": [
-    {
-      "name": "@baicie/react-shadcn",
-      "version": "0.1.0",
-      "source": "./packs/react-shadcn",
-      "resolved": {
-        "type": "local",
-        "path": "D:\\workspace\\git-code\\ai-rules\\packs\\react-shadcn"
-      },
-      "agents": ["codex", "cursor", "skill"],
-      "hash": "sha256-e54f1b75972250d9dca4c9101698f8f8cac67d19b6592e3b520e675bc1011b2e"
-    }
-  ],
-  "installs": [
-    {
-      "pack": "@baicie/react-shadcn",
-      "installId": "codex",
-      "agent": "codex",
-      "target": "AGENTS.md",
-      "mode": "template",
-      "merge": "managed-block",
-      "blocks": ["core", "shadcn", "testing"],
-      "files": [
-        {
-          "target": "AGENTS.md",
-          "contentHash": "sha256-0e50659c4712b9d8ffa5c8a9ea6c6fd6d2aaf35b1ecde9e63f0e73cb85feff2a"
-        }
-      ],
-      "contentHash": "sha256-1feb26ec1d2c6fea33df782e5c8263d264a038d9d104b6d85384ab108e238ab6",
-      "managedBlockId": "airules:@baicie/react-shadcn:codex"
-    },
-    {
-      "pack": "@baicie/react-shadcn",
-      "installId": "skill",
-      "agent": "skill",
-      "target": ".agents/skills/shadcn-page",
-      "mode": "directory",
-      "merge": "overwrite-managed",
-      "files": [
-        {
-          "target": ".agents/skills/shadcn-page/SKILL.md",
-          "contentHash": "sha256-6e6b4d620ff5ac41e4b26c246894ba8ccd54ab870c790e92727ea91853f97492"
-        }
-      ],
-      "contentHash": "sha256-b73af7ad865f6f2d24061ea82a6903f6235917f34ea8bb1dcf6be1ddffe1308e",
-      "managedBlockId": "airules:@baicie/react-shadcn:skill"
-    }
-  ]
+  "packs": [],
+  "installs": []
 }

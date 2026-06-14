@@ -23,7 +23,8 @@
   },
   "dependencies": {
     "@baicie/airules-schema": "workspace:*",
-    "jiti": "^2.7.0"
+    "jiti": "^2.7.0",
+    "tar": "^7.4.3"
   },
   "devDependencies": {
     "tsup": "^8.5.1",

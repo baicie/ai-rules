@@ -26,9 +26,9 @@ describe('resolveLocalPackSource', () => {
     ).toThrow(/Use resolvePackSource/)
   })
 
-  it('rejects npm source in Phase 2', () => {
+  it('tells callers to use resolvePackSource for npm source', () => {
     expect(() => resolveLocalPackSource('npm:@baicie/react-shadcn')).toThrow(
-      /npm source is not supported in Phase 2/,
+      /Use resolvePackSource/,
     )
   })
 })
@@ -38,5 +38,19 @@ describe('resolvePackSource', () => {
     return resolvePackSource('./packs/react-shadcn', '/repo').then(result => {
       expect(result.resolved.type).toBe('local')
     })
+  })
+
+  it('delegates npm sources to npm resolver', async () => {
+    const npmSource = await import('./npm-source')
+    const spy = vi.spyOn(npmSource, 'resolveNpmPackSource').mockResolvedValue({
+      source: 'npm:@baicie/pkg',
+      root: '/repo/.agents/agent/cache/npm/_baicie_pkg/0.1.0',
+      resolved: { type: 'npm', packageName: '@baicie/pkg', version: '0.1.0' },
+    })
+
+    const result = await resolvePackSource('npm:@baicie/pkg', '/repo')
+    expect(spy).toHaveBeenCalledWith('npm:@baicie/pkg', '/repo')
+    expect(result.resolved.type).toBe('npm')
+    spy.mockRestore()
   })
 })

@@ -13,7 +13,9 @@ export interface InitCommandOptions {
   force?: boolean
 }
 
-export function runInitCommand(options: InitCommandOptions): void {
+export async function runInitCommand(
+  options: InitCommandOptions,
+): Promise<void> {
   const agentDir = join(options.cwd, AIRULES_AGENT_DIR)
   const cacheDir = join(agentDir, AIRULES_CACHE_DIRNAME)
   const stagedDir = join(agentDir, AIRULES_STAGED_DIRNAME)
@@ -84,12 +86,18 @@ function createDefaultConfig(): string {
 
 export default {
   version: 1,
+  registries: [
+    {
+      name: 'default',
+      source: 'github:baicie/ai-rules/registry.json#main',
+    },
+  ],
   packs: [],
   install: {
     conflict: "warn"
   },
   security: {
-    trustedSources: [],
+    trustedSources: ['github:baicie/ai-rules'],
     allowScripts: false,
     requirePinnedVersion: false
   }

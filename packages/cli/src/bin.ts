@@ -8,8 +8,12 @@ import { runDiffCommand } from './commands/diff'
 import { runDoctorCommand } from './commands/doctor'
 import { runInitCommand } from './commands/init'
 import { runListCommand } from './commands/list'
+import { runPackBuildCommand, runPackValidateCommand } from './commands/pack'
 import { runPruneCommand } from './commands/prune'
+import { runRegistryListCommand } from './commands/registry'
+import { runRegistryPublishCommand } from './commands/registry-publish'
 import { runRemoveCommand } from './commands/remove'
+import { runSearchCommand } from './commands/search'
 import { runUpdateCommand } from './commands/update'
 
 export function runCli(argv = process.argv): void {
@@ -29,6 +33,7 @@ export function runCli(argv = process.argv): void {
     .command('add <source>', 'Install an airules pack')
     .option('--profile <profile>', 'Profile name')
     .option('--agent <agents>', 'Comma-separated agent names')
+    .option('--registry <registry>', 'Override registry source for named packs')
     .option('--dry-run', 'Preview changes without writing files')
     .option('--no-save', 'Do not save the pack into airules config')
     .action(
@@ -37,6 +42,7 @@ export function runCli(argv = process.argv): void {
         options: {
           profile?: string
           agent?: string
+          registry?: string
           dryRun?: boolean
           save?: boolean
         },
@@ -46,8 +52,117 @@ export function runCli(argv = process.argv): void {
           source,
           profile: options.profile,
           agent: options.agent,
+          registry: options.registry,
           dryRun: Boolean(options.dryRun),
           save: options.save,
+        })
+      },
+    )
+
+  cli
+    .command('pack-validate <pack>', 'Validate an airules pack')
+    .action(async (packPath: string) => {
+      await runPackValidateCommand({
+        cwd: process.cwd(),
+        packPath,
+      })
+    })
+
+  cli
+    .command(
+      'pack-build <pack>',
+      'Build an airules pack into an output directory',
+    )
+    .option('--out <out>', 'Output directory')
+    .option('--no-clean', 'Do not clean output directory before build')
+    .action(
+      async (
+        packPath: string,
+        options: {
+          out?: string
+          clean?: boolean
+        },
+      ) => {
+        await runPackBuildCommand({
+          cwd: process.cwd(),
+          packPath,
+          out: options.out,
+          noClean: options.clean === false,
+        })
+      },
+    )
+
+  cli
+    .command('search [query]', 'Search configured airules registries')
+    .option('--registry <registry>', 'Override registry source')
+    .action(
+      async (
+        query: string | undefined,
+        options: {
+          registry?: string
+        },
+      ) => {
+        await runSearchCommand({
+          cwd: process.cwd(),
+          query,
+          registry: options.registry,
+        })
+      },
+    )
+
+  cli
+    .command('registries', 'List configured airules registries')
+    .option('--registry <registry>', 'Override registry source')
+    .action(async (options: { registry?: string }) => {
+      await runRegistryListCommand({
+        cwd: process.cwd(),
+        registry: options.registry,
+      })
+    })
+
+  cli
+    .command(
+      'registry-publish <pack>',
+      'Publish a pack entry into registry.json',
+    )
+    .option('--registry <registry>', 'Registry json path')
+    .option('--source <source>', 'Resolved source to write into registry')
+    .option('--alias <aliases>', 'Comma-separated aliases')
+    .option('--tag <tags>', 'Comma-separated tags')
+    .option('--description <description>', 'Override description')
+    .option('--homepage <homepage>', 'Homepage URL')
+    .option('--deprecated <reason>', 'Mark as deprecated')
+    .action(
+      async (
+        packPath: string,
+        options: {
+          registry?: string
+          source?: string
+          alias?: string
+          tag?: string
+          description?: string
+          homepage?: string
+          deprecated?: string
+        },
+      ) => {
+        if (options.registry === undefined) {
+          throw new Error('--registry is required.')
+        }
+
+        if (options.source === undefined) {
+          throw new Error('--source is required.')
+        }
+
+        await runRegistryPublishCommand({
+          cwd: process.cwd(),
+          packPath,
+          registry: options.registry,
+          source: options.source,
+          alias: options.alias,
+          tag: options.tag,
+          description: options.description,
+          homepage: options.homepage,
+          deprecated: options.deprecated,
         })
       },
     )

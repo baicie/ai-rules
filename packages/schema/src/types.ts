@@ -88,6 +88,30 @@ export interface AirulesPack {
   }
 }
 
+export interface AirulesRegistryRef {
+  name?: string
+  source: string
+}
+
+export interface AirulesRegistryPack {
+  name: string
+  source: string
+  version?: string
+  description?: string
+  tags?: string[]
+  aliases?: string[]
+  deprecated?: boolean | string
+  homepage?: string
+}
+
+export interface AirulesRegistry {
+  $schema?: string
+  name?: string
+  version?: string
+  description?: string
+  packs: AirulesRegistryPack[]
+}
+
 export interface AirulesConfigPack {
   name?: string
   source: string
@@ -99,6 +123,9 @@ export interface AirulesConfigPack {
 export interface AirulesConfig {
   $schema?: string
   version: 1
+
+  registries?: AirulesRegistryRef[]
+
   packs: AirulesConfigPack[]
 
   install?: {

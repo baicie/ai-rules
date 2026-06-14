@@ -2,6 +2,7 @@ import type { AgentName, AirulesConfig } from '@baicie/airules-schema'
 import {
   installPack,
   loadAirulesConfigSync,
+  resolvePackAlias,
   upsertConfigPack,
   validateSourceSecurity,
   writeAirulesConfig,
@@ -14,12 +15,24 @@ export interface AddCommandOptions {
   agent?: string
   dryRun?: boolean
   save?: boolean
+  registry?: string
 }
 
 export async function runAddCommand(options: AddCommandOptions): Promise<void> {
   const agents = parseAgentList(options.agent)
   const config = loadConfigOrCreateEmpty(options.cwd)
-  const securityResult = validateSourceSecurity(options.source, config.security)
+
+  const resolvedAlias = await resolvePackAlias({
+    cwd: options.cwd,
+    source: options.source,
+    config,
+    registrySource: options.registry,
+  })
+
+  const securityResult = validateSourceSecurity(
+    resolvedAlias.source,
+    config.security,
+  )
 
   for (const warning of securityResult.warnings) {
     console.warn(`warning: ${warning}`)
@@ -27,7 +40,7 @@ export async function runAddCommand(options: AddCommandOptions): Promise<void> {
 
   const result = await installPack({
     cwd: options.cwd,
-    source: options.source,
+    source: resolvedAlias.source,
     ...(options.profile !== undefined ? { profile: options.profile } : {}),
     ...(agents !== undefined ? { agents } : {}),
     dryRun: options.dryRun === true,
@@ -40,8 +53,8 @@ export async function runAddCommand(options: AddCommandOptions): Promise<void> {
   }
 
   const nextConfig = upsertConfigPack(config, {
-    name: result.packName,
-    source: options.source,
+    name: resolvedAlias.name ?? result.packName,
+    source: resolvedAlias.source,
     ...(options.profile !== undefined ? { profile: options.profile } : {}),
     ...(agents !== undefined ? { agents } : {}),
   })
@@ -72,6 +85,12 @@ function loadConfigOrCreateEmpty(cwd: string): AirulesConfig {
   } catch {
     return {
       version: 1,
+      registries: [
+        {
+          name: 'default',
+          source: 'github:baicie/ai-rules/registry.json#main',
+        },
+      ],
       packs: [],
       install: {
         conflict: 'warn',

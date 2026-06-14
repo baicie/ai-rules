@@ -1,0 +1,24 @@
+{
+  "$schema": "https://baicie.github.io/airules/schema/registry.schema.json",
+  "name": "@baicie/default",
+  "version": "0.1.0",
+  "description": "Default airules registry",
+  "packs": [
+    {
+      "name": "@baicie/react-shadcn",
+      "source": "github:baicie/ai-rules/packs/react-shadcn#v0.1.0",
+      "version": "0.1.0",
+      "description": "React + shadcn/ui AI coding rules",
+      "tags": ["react", "shadcn"],
+      "aliases": ["shadcn", "react-shadcn"]
+    },
+    {
+      "name": "@baicie/ts-monorepo",
+      "source": "github:baicie/ai-rules/packs/ts-monorepo#v0.1.0",
+      "version": "0.1.0",
+      "description": "TypeScript monorepo AI coding rules",
+      "tags": ["typescript", "monorepo", "pnpm"],
+      "aliases": ["ts-monorepo", "monorepo"]
+    }
+  ]
+}
