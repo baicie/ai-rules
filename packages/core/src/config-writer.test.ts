@@ -60,6 +60,32 @@ describe('config-writer', () => {
     expect(config.security && config.security.requirePinnedVersion).toBe(true)
   })
 
+  it('preserves registries when upserting config pack', () => {
+    const config = upsertConfigPack(
+      {
+        version: 1,
+        registries: [
+          {
+            name: 'local',
+            source: './registry.json',
+          },
+        ],
+        packs: [],
+      },
+      {
+        name: '@baicie/react-shadcn',
+        source: './packs/react-shadcn',
+      },
+    )
+
+    expect(config.registries).toEqual([
+      {
+        name: 'local',
+        source: './registry.json',
+      },
+    ])
+  })
+
   it('upserts config pack by source and merges agents', () => {
     const config = upsertConfigPack(
       {

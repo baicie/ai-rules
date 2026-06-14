@@ -34,6 +34,7 @@ export function upsertConfigPack(
   return {
     version: 1,
     $schema: config.$schema,
+    registries: config.registries,
     install: config.install,
     security: config.security,
     packs: nextPacks,

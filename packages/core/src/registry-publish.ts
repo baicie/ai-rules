@@ -8,6 +8,7 @@ import process from 'node:process'
 import { AirulesRegistrySchema } from '@baicie/airules-schema'
 import { loadLocalPack } from './pack-loader'
 import { assertPackValid } from './pack-validator'
+import { ensureParentDirectory } from './path-utils'
 import { resolveLocalPackSource } from './source'
 
 export interface PublishPackToRegistryOptions {
@@ -93,6 +94,7 @@ export function publishPackToRegistry(
 
   registry.packs.sort((a, b) => a.name.localeCompare(b.name))
 
+  ensureParentDirectory(registryPath)
   writeFileSync(registryPath, `${JSON.stringify(registry, null, 2)}\n`)
 
   return {

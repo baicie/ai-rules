@@ -13,6 +13,14 @@ export interface ManagedBlockRange {
   end: number
 }
 
+export interface ReadManagedBlockResult {
+  range: ManagedBlockRange
+  raw: string
+  content: string
+  hash?: string
+  version?: string
+}
+
 export function createManagedBlock(
   meta: ManagedBlockMeta,
   content: string,
@@ -31,18 +39,8 @@ export function findManagedBlockRange(
   source: string,
   meta: Pick<ManagedBlockMeta, 'pack' | 'install'>,
 ): ManagedBlockRange | null {
-  const startPattern = new RegExp(
-    `<!--\\s*airules:start\\s+pack="${escapeRegExp(
-      meta.pack,
-    )}"\\s+install="${escapeRegExp(meta.install)}"[^>]*-->`,
-  )
-
-  const endPattern = new RegExp(
-    `<!--\\s*airules:end\\s+pack="${escapeRegExp(
-      meta.pack,
-    )}"\\s+install="${escapeRegExp(meta.install)}"\\s*-->`,
-  )
-
+  const startPattern = createStartPattern(meta)
+  const endPattern = createEndPattern(meta)
   const startMatch = startPattern.exec(source)
 
   if (!startMatch || typeof startMatch.index !== 'number') {
@@ -65,6 +63,46 @@ export function findManagedBlockRange(
   return {
     start: startMatch.index,
     end,
+  }
+}
+
+export function readManagedBlock(
+  source: string,
+  meta: Pick<ManagedBlockMeta, 'pack' | 'install'>,
+): ReadManagedBlockResult | null {
+  const startPattern = createStartPattern(meta)
+  const endPattern = createEndPattern(meta)
+  const startMatch = startPattern.exec(source)
+
+  if (!startMatch || typeof startMatch.index !== 'number') {
+    return null
+  }
+
+  const startEnd = startMatch.index + startMatch[0].length
+  const rest = source.slice(startEnd)
+  const endMatch = endPattern.exec(rest)
+
+  if (!endMatch || typeof endMatch.index !== 'number') {
+    return null
+  }
+
+  const contentStart = startEnd
+  const contentEnd = startEnd + endMatch.index
+  const end = contentEnd + endMatch[0].length
+  const attrs = parseAttributes(startMatch[0])
+
+  return {
+    range: {
+      start: startMatch.index,
+      end,
+    },
+    raw: source.slice(startMatch.index, end),
+    content: source
+      .slice(contentStart, contentEnd)
+      .replace(/^\r?\n/, '')
+      .replace(/\r?\n$/, ''),
+    hash: attrs.hash,
+    version: attrs.version,
   }
 }
 
@@ -253,6 +291,45 @@ function applyFallback(
   }
 
   throw new Error('Cannot find placement heading and fallback is error.')
+}
+
+function createStartPattern(
+  meta: Pick<ManagedBlockMeta, 'pack' | 'install'>,
+): RegExp {
+  return new RegExp(
+    `<!--\\s*airules:start\\s+pack="${escapeRegExp(
+      meta.pack,
+    )}"\\s+install="${escapeRegExp(meta.install)}"[^>]*-->`,
+  )
+}
+
+function createEndPattern(
+  meta: Pick<ManagedBlockMeta, 'pack' | 'install'>,
+): RegExp {
+  return new RegExp(
+    `<!--\\s*airules:end\\s+pack="${escapeRegExp(
+      meta.pack,
+    )}"\\s+install="${escapeRegExp(meta.install)}"\\s*-->`,
+  )
+}
+
+function parseAttributes(comment: string): Record<string, string> {
+  const attrs: Record<string, string> = {}
+  const pattern = /([a-z][\w-]*)="([^"]*)"/gi
+  let match = pattern.exec(comment)
+
+  while (match !== null) {
+    const key = match[1]
+    const value = match[2]
+
+    if (key !== undefined && value !== undefined) {
+      attrs[key] = value
+    }
+
+    match = pattern.exec(comment)
+  }
+
+  return attrs
 }
 
 function normalizeTrailingNewline(content: string): string {

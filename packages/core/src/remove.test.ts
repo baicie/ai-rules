@@ -154,6 +154,12 @@ describe('removePack', () => {
       result.operations.some(operation => operation.action === 'skip-modified'),
     ).toBe(true)
     expect(existsSync(join(cwd, '.cursor/rules/shadcn.mdc'))).toBe(true)
+
+    const lock = readFileSync(
+      join(cwd, '.agents/agent/airules.lock.json'),
+      'utf8',
+    )
+    expect(lock).toContain('@baicie/react-shadcn')
   })
 
   it('deletes modified file with force', () => {

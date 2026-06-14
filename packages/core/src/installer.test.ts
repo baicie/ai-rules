@@ -284,6 +284,49 @@ describe('installLocalPack', () => {
     )
   })
 
+  it('does not write skipped files into lockfile', () => {
+    const cwd = createTempProject()
+
+    mkdirSync(join(cwd, 'docs'), {
+      recursive: true,
+    })
+    writeFileSync(join(cwd, 'docs/rules.md'), 'user content\n')
+
+    const packPath = join(cwd, 'packs/react-shadcn/airules.pack.json')
+    const pack = JSON.parse(readFileSync(packPath, 'utf8')) as {
+      profiles: {
+        default: {
+          installs: string[]
+        }
+      }
+      installs: unknown[]
+    }
+
+    pack.profiles.default.installs = ['docs']
+    pack.installs = [
+      {
+        id: 'docs',
+        agent: 'generic',
+        target: 'docs/rules.md',
+        mode: 'file',
+        from: 'modules/core.md',
+        merge: 'skip-if-exists',
+      },
+    ]
+
+    writeFileSync(packPath, JSON.stringify(pack, null, 2))
+
+    const result = installLocalPack({
+      cwd,
+      source: './packs/react-shadcn',
+    })
+
+    expect(result.operations[0] && result.operations[0].action).toBe('skipped')
+
+    const lockfile = readAirulesLockfile(cwd)
+    expect(lockfile.installs).toHaveLength(0)
+  })
+
   it('createDryRunBlockForOperation returns the generated managed block only', () => {
     const cwd = createTempProject()
 

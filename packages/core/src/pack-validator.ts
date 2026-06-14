@@ -1,5 +1,5 @@
 import type { AirulesInstall, AirulesPack } from '@baicie/airules-schema'
-import { existsSync, statSync } from 'node:fs'
+import { existsSync, readFileSync, statSync } from 'node:fs'
 import process from 'node:process'
 import { AirulesPackSchema } from '@baicie/airules-schema'
 import { loadLocalPack } from './pack-loader'
@@ -144,17 +144,40 @@ function validateInstall(options: {
   }
 
   if (install.mode === 'template') {
+    const blockIds = new Set<string>()
+
     if (install.template !== undefined) {
-      issues.push(
-        validateFileExists(options.packRoot, install.template, {
+      const templateIssue = validateFileExists(
+        options.packRoot,
+        install.template,
+        {
           code: 'template-file-missing',
           installId: install.id,
           label: 'template',
-        }),
+        },
       )
+
+      issues.push(templateIssue)
+
+      if (templateIssue.severity !== 'error') {
+        const templatePath = safeResolveInside(
+          options.packRoot,
+          install.template,
+          'template',
+        )
+        const template = readTemplateFile(templatePath)
+
+        for (const blockId of extractTemplateBlockIds(template)) {
+          blockIds.add(blockId)
+        }
+      }
     }
 
     for (const blockId of install.blocks ?? []) {
+      blockIds.add(blockId)
+    }
+
+    for (const blockId of blockIds) {
       const blockPath = options.pack.blocks?.[blockId]
 
       if (blockPath === undefined) {
@@ -311,4 +334,36 @@ function findDuplicateInstallIds(installs: AirulesInstall[]): string[] {
   }
 
   return Array.from(duplicates)
+}
+
+function readTemplateFile(filePath: string): string {
+  return readFileSync(filePath, 'utf8')
+}
+
+function extractTemplateBlockIds(template: string): string[] {
+  const result = new Set<string>()
+  const quotedBlockPattern = /\{\{\s*block\s+["']([^"']+)["']\s*\}\}/g
+  const colonBlockPattern = /\{\{\s*block:([\w.-]+)\s*\}\}/g
+  let quotedMatch = quotedBlockPattern.exec(template)
+
+  while (quotedMatch !== null) {
+    const blockId = quotedMatch[1]
+    if (blockId !== undefined && blockId.length > 0) {
+      result.add(blockId)
+    }
+
+    quotedMatch = quotedBlockPattern.exec(template)
+  }
+
+  let colonMatch = colonBlockPattern.exec(template)
+  while (colonMatch !== null) {
+    const blockId = colonMatch[1]
+    if (blockId !== undefined && blockId.length > 0) {
+      result.add(blockId)
+    }
+
+    colonMatch = colonBlockPattern.exec(template)
+  }
+
+  return Array.from(result)
 }

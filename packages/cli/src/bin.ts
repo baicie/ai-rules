@@ -59,38 +59,45 @@ export function runCli(argv = process.argv): void {
       },
     )
 
-  cli
-    .command('pack-validate <pack>', 'Validate an airules pack')
-    .action(async (packPath: string) => {
-      await runPackValidateCommand({
-        cwd: process.cwd(),
-        packPath,
-      })
-    })
-
-  cli
-    .command(
-      'pack-build <pack>',
-      'Build an airules pack into an output directory',
-    )
-    .option('--out <out>', 'Output directory')
-    .option('--no-clean', 'Do not clean output directory before build')
-    .action(
-      async (
-        packPath: string,
-        options: {
-          out?: string
-          clean?: boolean
-        },
-      ) => {
-        await runPackBuildCommand({
+  function registerPackValidate(commandName: string): void {
+    cli
+      .command(commandName, 'Validate an airules pack')
+      .action(async (packPath: string) => {
+        await runPackValidateCommand({
           cwd: process.cwd(),
           packPath,
-          out: options.out,
-          noClean: options.clean === false,
         })
-      },
-    )
+      })
+  }
+
+  function registerPackBuild(commandName: string): void {
+    cli
+      .command(commandName, 'Build an airules pack into an output directory')
+      .option('--out <out>', 'Output directory')
+      .option('--no-clean', 'Do not clean output directory before build')
+      .action(
+        async (
+          packPath: string,
+          options: {
+            out?: string
+            clean?: boolean
+          },
+        ) => {
+          await runPackBuildCommand({
+            cwd: process.cwd(),
+            packPath,
+            out: options.out,
+            noClean: options.clean === false,
+          })
+        },
+      )
+  }
+
+  registerPackValidate('pack validate <pack>')
+  registerPackValidate('pack-validate <pack>')
+
+  registerPackBuild('pack build <pack>')
+  registerPackBuild('pack-build <pack>')
 
   cli
     .command('search [query]', 'Search configured airules registries')
@@ -110,62 +117,69 @@ export function runCli(argv = process.argv): void {
       },
     )
 
-  cli
-    .command('registries', 'List configured airules registries')
-    .option('--registry <registry>', 'Override registry source')
-    .action(async (options: { registry?: string }) => {
-      await runRegistryListCommand({
-        cwd: process.cwd(),
-        registry: options.registry,
-      })
-    })
-
-  cli
-    .command(
-      'registry-publish <pack>',
-      'Publish a pack entry into registry.json',
-    )
-    .option('--registry <registry>', 'Registry json path')
-    .option('--source <source>', 'Resolved source to write into registry')
-    .option('--alias <aliases>', 'Comma-separated aliases')
-    .option('--tag <tags>', 'Comma-separated tags')
-    .option('--description <description>', 'Override description')
-    .option('--homepage <homepage>', 'Homepage URL')
-    .option('--deprecated <reason>', 'Mark as deprecated')
-    .action(
-      async (
-        packPath: string,
-        options: {
-          registry?: string
-          source?: string
-          alias?: string
-          tag?: string
-          description?: string
-          homepage?: string
-          deprecated?: string
-        },
-      ) => {
-        if (options.registry === undefined) {
-          throw new Error('--registry is required.')
-        }
-
-        if (options.source === undefined) {
-          throw new Error('--source is required.')
-        }
-
-        await runRegistryPublishCommand({
+  function registerRegistryList(commandName: string): void {
+    cli
+      .command(commandName, 'List configured airules registries')
+      .option('--registry <registry>', 'Override registry source')
+      .action(async (options: { registry?: string }) => {
+        await runRegistryListCommand({
           cwd: process.cwd(),
-          packPath,
           registry: options.registry,
-          source: options.source,
-          alias: options.alias,
-          tag: options.tag,
-          description: options.description,
-          homepage: options.homepage,
-          deprecated: options.deprecated,
         })
-      },
-    )
+      })
+  }
+
+  function registerRegistryPublish(commandName: string): void {
+    cli
+      .command(commandName, 'Publish a pack entry into registry.json')
+      .option('--registry <registry>', 'Registry json path')
+      .option('--source <source>', 'Resolved source to write into registry')
+      .option('--alias <aliases>', 'Comma-separated aliases')
+      .option('--tag <tags>', 'Comma-separated tags')
+      .option('--description <description>', 'Override description')
+      .option('--homepage <homepage>', 'Homepage URL')
+      .option('--deprecated <reason>', 'Mark as deprecated')
+      .action(
+        async (
+          packPath: string,
+          options: {
+            registry?: string
+            source?: string
+            alias?: string
+            tag?: string
+            description?: string
+            homepage?: string
+            deprecated?: string
+          },
+        ) => {
+          if (options.registry === undefined) {
+            throw new Error('--registry is required.')
+          }
+
+          if (options.source === undefined) {
+            throw new Error('--source is required.')
+          }
+
+          await runRegistryPublishCommand({
+            cwd: process.cwd(),
+            packPath,
+            registry: options.registry,
+            source: options.source,
+            alias: options.alias,
+            tag: options.tag,
+            description: options.description,
+            homepage: options.homepage,
+            deprecated: options.deprecated,
+          })
+        },
+      )
+  }
+
+  registerRegistryList('registry list')
+  registerRegistryList('registries')
+
+  registerRegistryPublish('registry publish <pack>')
+  registerRegistryPublish('registry-publish <pack>')
 
   cli
     .command('update [name]', 'Reinstall configured airules packs')

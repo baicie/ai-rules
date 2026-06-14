@@ -16,7 +16,11 @@ function createProject(): string {
   return currentTmpDir
 }
 
-function writeLock(cwd: string, cursorHash: string): void {
+function writeLock(
+  cwd: string,
+  cursorHash: string,
+  codexHash = sha256('## Core\n'),
+): void {
   writeFileSync(
     join(cwd, '.agents/agent/airules.lock.json'),
     JSON.stringify(
@@ -33,7 +37,13 @@ function writeLock(cwd: string, cursorHash: string): void {
             target: 'AGENTS.md',
             mode: 'modules',
             merge: 'managed-block',
-            contentHash: 'sha256-rendered',
+            files: [
+              {
+                target: 'AGENTS.md',
+                contentHash: codexHash,
+              },
+            ],
+            contentHash: codexHash,
           },
           {
             pack: '@baicie/react-shadcn',
@@ -148,6 +158,63 @@ describe('runDoctor', () => {
     expect(result.issues.some(issue => issue.code === 'target-modified')).toBe(
       true,
     )
+  })
+
+  it('reports managed block content modification', () => {
+    const cwd = createProject()
+
+    writeFileSync(
+      join(cwd, 'AGENTS.md'),
+      createManagedBlock(
+        {
+          pack: '@baicie/react-shadcn',
+          install: 'codex',
+          version: '0.1.0',
+          hash: sha256('## Core\n'),
+        },
+        '## Changed\n',
+      ),
+    )
+
+    writeFileSync(
+      join(cwd, '.agents/agent/airules.lock.json'),
+      JSON.stringify(
+        {
+          lockfileVersion: 1,
+          generatedAt: '2026-06-14T00:00:00.000Z',
+          airulesVersion: '0.0.0',
+          packs: [],
+          installs: [
+            {
+              pack: '@baicie/react-shadcn',
+              installId: 'codex',
+              agent: 'codex',
+              target: 'AGENTS.md',
+              mode: 'modules',
+              merge: 'managed-block',
+              files: [
+                {
+                  target: 'AGENTS.md',
+                  contentHash: sha256('## Core\n'),
+                },
+              ],
+              contentHash: sha256('## Core\n'),
+            },
+          ],
+        },
+        null,
+        2,
+      ),
+    )
+
+    const result = runDoctor({
+      cwd,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(
+      result.issues.some(issue => issue.code === 'managed-block-modified'),
+    ).toBe(true)
   })
 
   it('reports missing target files as error', () => {

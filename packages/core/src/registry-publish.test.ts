@@ -1,4 +1,5 @@
 import {
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -115,5 +116,18 @@ describe('publishPackToRegistry', () => {
     )
     expect(registry.packs).toHaveLength(1)
     expect(registry.packs[0].source).toBe('./new')
+  })
+
+  it('creates parent directory for registry path', () => {
+    const { cwd, packRoot } = createPack()
+
+    publishPackToRegistry({
+      cwd,
+      packPath: packRoot,
+      registryPath: 'dist/registry/registry.json',
+      source: './packs/react-shadcn',
+    })
+
+    expect(existsSync(join(cwd, 'dist/registry/registry.json'))).toBe(true)
   })
 })

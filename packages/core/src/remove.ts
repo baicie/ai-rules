@@ -1,6 +1,6 @@
 import type { AirulesLockInstall, MergeStrategy } from '@baicie/airules-schema'
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import { dirname, isAbsolute, relative } from 'node:path'
 import { sha256 } from './hash'
 import {
   readAirulesLockfile,
@@ -47,32 +47,65 @@ export function removePack(options: RemovePackOptions): RemovePackResult {
     throw new Error(`Pack "${options.pack}" is not installed.`)
   }
 
-  const operations: RemoveOperation[] = []
   const dryRun = options.dryRun === true
   const force = options.force === true
 
-  for (const install of installs) {
-    operations.push(
-      ...removeInstall({
-        cwd: options.cwd,
-        install,
-        dryRun,
-        force,
-      }),
-    )
+  const previewOperations = collectRemoveOperations({
+    cwd: options.cwd,
+    installs,
+    dryRun: true,
+    force,
+  })
+
+  const hasModifiedFile = previewOperations.some(
+    operation => operation.action === 'skip-modified',
+  )
+
+  if (dryRun || (hasModifiedFile && !force)) {
+    return {
+      pack: options.pack,
+      operations: previewOperations,
+    }
   }
 
-  if (!dryRun) {
-    writeAirulesLockfile(
-      options.cwd,
-      removePackFromLockfile(lockfile, options.pack),
-    )
-  }
+  const operations = collectRemoveOperations({
+    cwd: options.cwd,
+    installs,
+    dryRun: false,
+    force,
+  })
+
+  writeAirulesLockfile(
+    options.cwd,
+    removePackFromLockfile(lockfile, options.pack),
+  )
 
   return {
     pack: options.pack,
     operations,
   }
+}
+
+function collectRemoveOperations(options: {
+  cwd: string
+  installs: AirulesLockInstall[]
+  dryRun: boolean
+  force: boolean
+}): RemoveOperation[] {
+  const operations: RemoveOperation[] = []
+
+  for (const install of options.installs) {
+    operations.push(
+      ...removeInstall({
+        cwd: options.cwd,
+        install,
+        dryRun: options.dryRun,
+        force: options.force,
+      }),
+    )
+  }
+
+  return operations
 }
 
 function removeInstall(options: {
@@ -242,7 +275,7 @@ function defaultMergeForLockInstall(
 function cleanupEmptyParents(startDir: string, root: string): void {
   let current = startDir
 
-  while (current.startsWith(root) && current !== root) {
+  while (isInsideRoot(current, root) && current !== root) {
     try {
       rmSync(current, {
         recursive: false,
@@ -252,4 +285,14 @@ function cleanupEmptyParents(startDir: string, root: string): void {
       return
     }
   }
+}
+
+function isInsideRoot(path: string, root: string): boolean {
+  const relativePath = relative(root, path)
+
+  return (
+    relativePath.length > 0 &&
+    !relativePath.startsWith('..') &&
+    !isAbsolute(relativePath)
+  )
 }

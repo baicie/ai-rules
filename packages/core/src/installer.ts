@@ -137,13 +137,19 @@ function installResolvedPack(
 
       installOperations.push(operation)
 
-      lockFiles.push({
-        target: renderedFile.target,
-        contentHash: operation.contentHash,
-      })
+      if (shouldLockOperation(operation)) {
+        lockFiles.push({
+          target: renderedFile.target,
+          contentHash: operation.contentHash,
+        })
+      }
     }
 
     operations.push(...installOperations)
+
+    if (lockFiles.length === 0) {
+      continue
+    }
 
     const lockEntry: AirulesLockInstall = {
       pack: loaded.pack.name,
@@ -290,7 +296,7 @@ function applyManagedBlockFile(
     nextContent,
     renderedContent: options.renderedFile.content,
     managedBlock,
-    contentHash: sha256(nextContent),
+    contentHash: options.renderedFile.contentHash,
   }
 }
 
@@ -475,6 +481,14 @@ function isFileManagedByLock(options: {
   }
 
   return false
+}
+
+function shouldLockOperation(operation: InstallOperation): boolean {
+  return (
+    operation.action === 'create' ||
+    operation.action === 'update' ||
+    operation.action === 'unchanged'
+  )
 }
 
 export function createDryRunBlockForOperation(

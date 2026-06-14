@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { AirulesLockfileSchema } from '@baicie/airules-schema'
 import { sha256 } from './hash'
 import { readAirulesLockfile } from './lockfile'
-import { findManagedBlockRange } from './managed-block'
+import { readManagedBlock } from './managed-block'
 import { safeResolveTarget } from './path-utils'
 
 export type DoctorSeverity = 'ok' | 'warning' | 'error'
@@ -105,16 +105,30 @@ function checkInstall(cwd: string, install: AirulesLockInstall): DoctorIssue[] {
     const content = readFileSync(targetPath, 'utf8')
 
     if (merge === 'managed-block') {
-      const range = findManagedBlockRange(content, {
+      const block = readManagedBlock(content, {
         pack: install.pack,
         install: install.installId,
       })
 
-      if (range === null) {
+      if (block === null) {
         issues.push({
           severity: 'error',
           code: 'managed-block-missing',
           message: `Managed block is missing in ${file.target}.`,
+          target: file.target,
+          pack: install.pack,
+          installId: install.installId,
+        })
+        continue
+      }
+
+      const currentHash = sha256(`${block.content}\n`)
+
+      if (currentHash !== file.contentHash) {
+        issues.push({
+          severity: 'warning',
+          code: 'managed-block-modified',
+          message: `Managed block content was modified after install: ${file.target}`,
           target: file.target,
           pack: install.pack,
           installId: install.installId,

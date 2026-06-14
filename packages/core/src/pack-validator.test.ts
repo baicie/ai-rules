@@ -96,4 +96,44 @@ describe('validatePack', () => {
       result.issues.some(issue => issue.code === 'module-file-missing'),
     ).toBe(true)
   })
+
+  it('reports template implicit missing block references', () => {
+    const packRoot = createPack()
+
+    mkdirSync(join(packRoot, 'templates'), {
+      recursive: true,
+    })
+
+    writeFileSync(
+      join(packRoot, 'templates/AGENTS.md.hbs'),
+      '{{block "missing"}}\n',
+    )
+
+    writeFileSync(
+      join(packRoot, 'airules.pack.json'),
+      JSON.stringify({
+        name: '@baicie/react-shadcn',
+        version: '0.1.0',
+        blocks: {},
+        installs: [
+          {
+            id: 'codex',
+            agent: 'codex',
+            target: 'AGENTS.md',
+            mode: 'template',
+            template: 'templates/AGENTS.md.hbs',
+          },
+        ],
+      }),
+    )
+
+    const result = validatePack({
+      packPath: packRoot,
+    })
+
+    expect(result.ok).toBe(false)
+    expect(result.issues.some(issue => issue.code === 'block-id-missing')).toBe(
+      true,
+    )
+  })
 })

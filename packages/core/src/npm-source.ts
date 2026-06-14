@@ -1,7 +1,7 @@
 import type { AirulesResolvedSource } from '@baicie/airules-schema'
 import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import * as tar from 'tar'
 import { getAirulesAgentDir } from './config-loader'
@@ -203,11 +203,53 @@ async function downloadNpmTarballToCache(options: {
     file: tarballPath,
     cwd: options.cacheRoot,
     strip: 1,
+    filter: (entryPath, entry) => {
+      const entryType = 'type' in entry ? String(entry.type) : ''
+      return isSafeTarEntry(options.cacheRoot, entryPath, entryType)
+    },
   })
 
   rmSync(tarballPath, {
     force: true,
   })
+}
+
+function isSafeTarEntry(
+  cacheRoot: string,
+  entryPath: string,
+  entryType: string,
+): boolean {
+  if (
+    entryType !== 'File' &&
+    entryType !== 'Directory' &&
+    entryType !== 'OldFile'
+  ) {
+    return false
+  }
+
+  const stripped = stripFirstSegment(entryPath)
+
+  if (stripped.length === 0) {
+    return true
+  }
+
+  const parts = stripped.split(/[\\/]/)
+  if (parts.includes('..') || isAbsolute(stripped)) {
+    return false
+  }
+
+  const target = resolve(cacheRoot, stripped)
+  const relativePath = relative(cacheRoot, target)
+
+  return (
+    relativePath.length > 0 &&
+    !relativePath.startsWith('..') &&
+    !isAbsolute(relativePath)
+  )
+}
+
+function stripFirstSegment(value: string): string {
+  return value.replace(/\\/g, '/').split('/').slice(1).join('/')
 }
 
 function createNpmHeaders(): Record<string, string> {
