@@ -1,1 +1,1 @@
-export const AIRULES_VERSION = '0.0.1-beta.4'
+export const AIRULES_VERSION = '0.0.1-beta.5'
