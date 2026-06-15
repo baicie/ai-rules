@@ -119,4 +119,23 @@ export default {
       /Cannot find airules config/,
     )
   })
+
+  it('loads minimal config with schema defaults', () => {
+    const cwd = createTempProject()
+
+    writeFileSync(
+      join(cwd, '.agents/agent/airules.config.ts'),
+      `export default {
+  packs: [],
+}
+`,
+    )
+
+    const config = loadAirulesConfigSync(cwd)
+
+    expect(config).toEqual({
+      version: 1,
+      packs: [],
+    })
+  })
 })

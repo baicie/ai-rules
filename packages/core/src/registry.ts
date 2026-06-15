@@ -7,15 +7,15 @@ import type {
 import { existsSync, readFileSync } from 'node:fs'
 import { isAbsolute, resolve } from 'node:path'
 import process from 'node:process'
-import { AirulesRegistrySchema } from '@baicie/airules-schema'
+import {
+  AirulesRegistrySchema,
+  DEFAULT_AIRULES_REGISTRY_SOURCE,
+} from '@baicie/airules-schema'
 import { parseGitHubSource } from './github-source'
 import {
   isDirectPackSourceInput,
   normalizePackSourceInput,
 } from './source-spec'
-
-export const DEFAULT_REGISTRY_SOURCE =
-  'github:baicie/ai-rules/registry.json#main'
 
 export interface LoadedRegistry {
   ref: AirulesRegistryRef
@@ -177,7 +177,7 @@ export function resolveRegistryRefs(
   return [
     {
       name: 'default',
-      source: DEFAULT_REGISTRY_SOURCE,
+      source: DEFAULT_AIRULES_REGISTRY_SOURCE,
     },
   ]
 }

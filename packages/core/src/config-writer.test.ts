@@ -179,7 +179,26 @@ describe('config-writer', () => {
     )
   })
 
-  it('writes ts config by default', () => {
+  it('renders compact plain object TypeScript config', () => {
+    const cwd = createTempProject()
+
+    writeAirulesConfig(cwd, {
+      version: 1,
+      packs: [],
+    })
+
+    const config = readFileSync(
+      join(cwd, '.agents/agent/airules.config.ts'),
+      'utf8',
+    )
+
+    expect(config).toContain('export default')
+    expect(config).toContain('"packs": []')
+    expect(config).not.toContain('registries')
+    expect(config).not.toContain('security')
+  })
+
+  it('renders compact plain object TypeScript config with packs', () => {
     const cwd = createTempProject()
 
     writeAirulesConfig(cwd, {
@@ -196,12 +215,35 @@ describe('config-writer', () => {
       'utf8',
     )
 
-    expect(raw).toContain('airules config')
+    expect(raw).toContain('export default')
     expect(raw).toContain('./packs/react-shadcn')
+    expect(raw).not.toContain('registries')
 
     const loaded = loadAirulesConfigSync(cwd)
     expect(loaded.packs[0] && loaded.packs[0].source).toBe(
       './packs/react-shadcn',
     )
+  })
+
+  it('omits default registry when writing config', () => {
+    const cwd = createTempProject()
+
+    writeAirulesConfig(cwd, {
+      version: 1,
+      registries: [
+        {
+          name: 'default',
+          source: 'github:baicie/ai-rules/registry.json#main',
+        },
+      ],
+      packs: [],
+    })
+
+    const config = readFileSync(
+      join(cwd, '.agents/agent/airules.config.ts'),
+      'utf8',
+    )
+
+    expect(config).not.toContain('registries')
   })
 })

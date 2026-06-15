@@ -24,7 +24,7 @@ afterEach(() => {
 })
 
 describe('init command', () => {
-  it('creates project metadata without project-local remote cache or state', async () => {
+  it('creates project metadata and self skill with cache and staged', async () => {
     const cwd = createTempProject()
     vi.spyOn(console, 'info').mockImplementation(() => undefined)
 
@@ -36,7 +36,31 @@ describe('init command', () => {
     expect(existsSync(join(cwd, '.agents/agent/airules.config.ts'))).toBe(true)
     expect(existsSync(join(cwd, '.agents/agent/airules.lock.json'))).toBe(true)
     expect(existsSync(join(cwd, '.agents/agent/staged'))).toBe(true)
-    expect(existsSync(join(cwd, '.agents/agent/cache'))).toBe(false)
-    expect(existsSync(join(cwd, '.agents/agent/state.json'))).toBe(false)
+    expect(existsSync(join(cwd, '.agents/agent/cache'))).toBe(true)
+    expect(existsSync(join(cwd, '.agents/skills/airules/SKILL.md'))).toBe(true)
+  })
+
+  it('creates compact plain object config without defineConfig import', async () => {
+    const cwd = createTempProject()
+
+    await runInitCommand({
+      cwd,
+    })
+
+    const config = await import('node:fs/promises').then(m =>
+      m.readFile(join(cwd, '.agents/agent/airules.config.ts'), 'utf8'),
+    )
+
+    expect(config).toContain('export default')
+    expect(config).toContain('packs: []')
+    expect(config).not.toContain('registries:')
+    expect(config).not.toContain('security:')
+    expect(config).not.toContain('install:')
+
+    const skill = await import('node:fs/promises').then(m =>
+      m.readFile(join(cwd, '.agents/skills/airules/SKILL.md'), 'utf8'),
+    )
+
+    expect(skill).toContain('name: airules')
   })
 })

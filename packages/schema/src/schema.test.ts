@@ -93,6 +93,34 @@ describe('airulesConfigSchema', () => {
 
     expect(AirulesConfigSchema.parse(config)).toEqual(config)
   })
+
+  it('parses minimal config with defaults', () => {
+    const config = AirulesConfigSchema.parse({})
+
+    expect(config).toEqual({
+      version: 1,
+      packs: [],
+    })
+  })
+
+  it('parses config with only packs', () => {
+    const config = AirulesConfigSchema.parse({
+      packs: [
+        {
+          source: 'shadcn',
+        },
+      ],
+    })
+
+    expect(config).toEqual({
+      version: 1,
+      packs: [
+        {
+          source: 'shadcn',
+        },
+      ],
+    })
+  })
 })
 
 describe('airulesLockfileSchema', () => {

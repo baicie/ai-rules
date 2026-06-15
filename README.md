@@ -6,14 +6,47 @@ AI Rules Pack Manager for coding agents.
 
 - `AGENTS.md`
 - `CLAUDE.md`
+- `.cursor/rules/*.mdc`
 - `.github/copilot-instructions.md`
 - `.agents/skills/*`
 - `docs/ai/*`
 
-## Install
+## Quick start
+
+airules can work without running `init` first. The first successful `airules add` will create local state automatically.
+
+```bash
+pnpm dlx @baicie/airules add ./packs/react-shadcn --agent codex,cursor
+```
+
+To initialize explicitly:
 
 ```bash
 pnpm dlx @baicie/airules init
+```
+
+## Config
+
+Minimal config:
+
+```ts
+export default {
+  packs: [],
+}
+```
+
+Add a pack:
+
+```ts
+export default {
+  packs: [
+    {
+      name: '@baicie/react-shadcn',
+      source: 'shadcn',
+      agents: ['codex', 'cursor', 'skill'],
+    },
+  ],
+}
 ```
 
 ## Add local pack
@@ -93,8 +126,11 @@ backward compatibility.
 ├── agent/
 │   ├── airules.config.ts
 │   ├── airules.lock.json
+│   ├── cache/
 │   └── staged/
 └── skills/
+    └── airules/
+        └── SKILL.md
 ```
 
 Remote pack cache is shared across projects:

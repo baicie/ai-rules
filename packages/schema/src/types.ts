@@ -120,24 +120,38 @@ export interface AirulesConfigPack {
   variables?: Record<string, unknown>
 }
 
+export interface AirulesConfigInstallOptions {
+  defaultPlacement?: Placement
+  conflict?: 'warn' | 'error' | 'stage' | 'overwrite'
+}
+
+export interface AirulesConfigSecurityOptions {
+  trustedSources?: string[]
+  allowScripts?: boolean
+  requirePinnedVersion?: boolean
+}
+
 export interface AirulesConfig {
   $schema?: string
   version: 1
-
   registries?: AirulesRegistryRef[]
-
   packs: AirulesConfigPack[]
+  install?: AirulesConfigInstallOptions
+  security?: AirulesConfigSecurityOptions
+}
 
-  install?: {
-    defaultPlacement?: Placement
-    conflict?: 'warn' | 'error' | 'stage' | 'overwrite'
-  }
-
-  security?: {
-    trustedSources?: string[]
-    allowScripts?: boolean
-    requirePinnedVersion?: boolean
-  }
+/**
+ * User-facing config accepted by defineConfig().
+ * version defaults to 1, packs defaults to [].
+ * registries/install/security are only needed when overriding defaults.
+ */
+export interface AirulesUserConfig {
+  $schema?: string
+  version?: 1
+  registries?: AirulesRegistryRef[]
+  packs?: AirulesConfigPack[]
+  install?: AirulesConfigInstallOptions
+  security?: AirulesConfigSecurityOptions
 }
 
 export type AirulesResolvedSource =

@@ -158,11 +158,11 @@ export const AirulesConfigPackSchema = z.object({
 
 export const AirulesConfigSchema = z.object({
   $schema: z.string().optional(),
-  version: z.literal(1),
+  version: z.literal(1).default(1),
 
   registries: z.array(AirulesRegistryRefSchema).optional(),
 
-  packs: z.array(AirulesConfigPackSchema),
+  packs: z.array(AirulesConfigPackSchema).default([]),
 
   install: z
     .object({

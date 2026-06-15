@@ -1,5 +1,6 @@
-import type { AgentName, AirulesConfig } from '@baicie/airules-schema'
+import type { AgentName } from '@baicie/airules-schema'
 import {
+  ensureAirulesProject,
   installPack,
   loadAirulesConfigSync,
   resolvePackAlias,
@@ -7,6 +8,7 @@ import {
   validateSourceSecurity,
   writeAirulesConfig,
 } from '@baicie/airules-core'
+import { createDefaultConfig } from '@baicie/airules-schema'
 
 export interface AddCommandOptions {
   cwd: string
@@ -52,6 +54,13 @@ export async function runAddCommand(options: AddCommandOptions): Promise<void> {
     return
   }
 
+  ensureAirulesProject({
+    cwd: options.cwd,
+    writeConfig: false,
+    writeLockfile: false,
+    writeSelfSkill: true,
+  })
+
   const nextConfig = upsertConfigPack(config, {
     name: resolvedAlias.name ?? result.packName,
     source: resolvedAlias.source,
@@ -79,28 +88,11 @@ function parseAgentList(agent: string | undefined): AgentName[] | undefined {
   return agents.length > 0 ? agents : undefined
 }
 
-function loadConfigOrCreateEmpty(cwd: string): AirulesConfig {
+function loadConfigOrCreateEmpty(cwd: string) {
   try {
     return loadAirulesConfigSync(cwd)
   } catch {
-    return {
-      version: 1,
-      registries: [
-        {
-          name: 'default',
-          source: 'github:baicie/ai-rules/registry.json#main',
-        },
-      ],
-      packs: [],
-      install: {
-        conflict: 'warn',
-      },
-      security: {
-        trustedSources: [],
-        allowScripts: false,
-        requirePinnedVersion: false,
-      },
-    }
+    return createDefaultConfig()
   }
 }
 

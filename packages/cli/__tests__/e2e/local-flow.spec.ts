@@ -105,8 +105,6 @@ describe('local airules flow', () => {
       cwd,
       source: './packs/react-shadcn',
       agent: 'codex,skill',
-    }).then(() => {
-      expect('not listed in security.trustedSources').toHaveBeenWarned()
     })
 
     expect(readFileSync(join(cwd, 'AGENTS.md'), 'utf8')).toContain(

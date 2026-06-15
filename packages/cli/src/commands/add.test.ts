@@ -138,4 +138,26 @@ describe('runAddCommand', () => {
       }),
     ).rejects.toThrow(/Invalid AgentMD snippet source/)
   }, 5000)
+
+  it('bootstraps project state on first add without init', async () => {
+    const cwd = createProject()
+
+    await runAddCommand({
+      cwd,
+      source: './packs/react-shadcn',
+      agent: 'codex',
+    })
+
+    expect(existsSync(join(cwd, '.agents/agent/airules.config.ts'))).toBe(true)
+    expect(existsSync(join(cwd, '.agents/agent/airules.lock.json'))).toBe(true)
+    expect(existsSync(join(cwd, '.agents/skills/airules/SKILL.md'))).toBe(true)
+
+    const config = readFileSync(
+      join(cwd, '.agents/agent/airules.config.ts'),
+      'utf8',
+    )
+
+    expect(config).toContain('export default')
+    expect(config).toContain('@baicie/react-shadcn')
+  })
 })

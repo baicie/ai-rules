@@ -1,4 +1,10 @@
+export const AIRULES_ROOT_DIR = '.agents'
+
 export const AIRULES_AGENT_DIR = '.agents/agent'
+
+export const AIRULES_SKILLS_DIR = '.agents/skills'
+
+export const AIRULES_SELF_SKILL_NAME = 'airules'
 
 export const AIRULES_CONFIG_FILENAMES = [
   'airules.config.ts',

@@ -28,10 +28,12 @@ export function runCli(argv = process.argv): void {
   cli
     .command('init', 'Initialize airules in the current repository')
     .option('--force', 'Overwrite existing config and lock files')
-    .action(async (options: { force?: boolean }) => {
+    .option('--no-skill', 'Do not create .agents/skills/airules/SKILL.md')
+    .action(async (options: { force?: boolean; skill?: boolean }) => {
       await runInitCommand({
         cwd: process.cwd(),
         force: Boolean(options.force),
+        noSkill: options.skill === false,
       })
     })
 
