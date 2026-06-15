@@ -17,6 +17,17 @@ export default defineConfig(
       'no-restricted-globals': ['error', ...DOMGlobals, ...NodeGlobals],
 
       'no-restricted-syntax': ['error', banConstEnum],
+
+      // Prettier owns these layout choices. Keeping the stylistic rules enabled
+      // makes `pnpm format` and `pnpm lint` fight each other.
+      'antfu/if-newline': 'off',
+      'style/arrow-parens': 'off',
+      'style/brace-style': 'off',
+      'style/indent': 'off',
+      'style/indent-binary-ops': 'off',
+      'style/member-delimiter-style': 'off',
+      'style/operator-linebreak': 'off',
+      'style/quote-props': 'off',
     },
   },
 
@@ -40,6 +51,13 @@ export default defineConfig(
       'no-restricted-globals': 'off',
       'no-restricted-syntax': ['error', banConstEnum],
       'no-console': 'off',
+    },
+  },
+
+  {
+    files: ['**/package.json'],
+    rules: {
+      'jsonc/sort-keys': 'off',
     },
   },
 

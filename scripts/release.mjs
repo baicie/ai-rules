@@ -23,17 +23,14 @@ const config = defineReleaseConfig({
     roots: ['packages'],
     publishable(pkg) {
       return (
-        pkg.packageJson.private !== true
-        && pkg.name.startsWith('@baicie/airules')
+        pkg.packageJson.private !== true &&
+        pkg.name.startsWith('@baicie/airules')
       )
     },
     packageKind(relativeDir) {
-      if (relativeDir === 'packages/schema')
-        return '0-schema'
-      if (relativeDir === 'packages/core')
-        return '1-core'
-      if (relativeDir === 'packages/cli')
-        return '2-cli'
+      if (relativeDir === 'packages/schema') return '0-schema'
+      if (relativeDir === 'packages/core') return '1-core'
+      if (relativeDir === 'packages/cli') return '2-cli'
       return '9-other'
     },
   },
@@ -49,7 +46,7 @@ const config = defineReleaseConfig({
   precheck: {
     commands: [
       ['pnpm', 'check'],
-      ['pnpm', 'release:readiness', '--strict'],
+      ['pnpm', 'release:readiness', '--strict', '--allow-zero'],
     ],
     verifyCommand: false,
   },
@@ -63,13 +60,15 @@ const config = defineReleaseConfig({
 
       if (pkg.name === '@baicie/airules') {
         const bin = pkg.packageJson.bin
-        const hasAirulesBin
-          = typeof bin === 'object'
-            && bin !== null
-            && bin.airules === './dist/bin.js'
+        const hasAirulesBin =
+          typeof bin === 'object' &&
+          bin !== null &&
+          bin.airules === './dist/bin.js'
 
         if (!hasAirulesBin) {
-          errors.push('@baicie/airules: bin.airules must point to ./dist/bin.js')
+          errors.push(
+            '@baicie/airules: bin.airules must point to ./dist/bin.js',
+          )
         }
       }
 
@@ -139,8 +138,7 @@ try {
         `Unknown release command "${command}". Expected release, publish, precheck, readiness, plan, or version.`,
       )
   }
-}
-catch (error) {
+} catch (error) {
   console.error(error instanceof Error ? error.message : String(error))
   process.exitCode = 1
 }

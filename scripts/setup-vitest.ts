@@ -25,8 +25,7 @@ expect.extend({
         pass: true,
         message: () => `expected "${received}" not to have been warned.`,
       }
-    }
-    else {
+    } else {
       const msgs = warn.mock.calls.map(args => args[0]).join('\n - ')
       return {
         pass: false,
@@ -56,8 +55,7 @@ expect.extend({
         pass: true,
         message: () => `expected "${received}" not to have been warned last.`,
       }
-    }
-    else {
+    } else {
       const msgs = warn.mock.calls.map(args => args[0]).join('\n - ')
       return {
         pass: false,
@@ -69,7 +67,7 @@ expect.extend({
 
   toHaveBeenWarnedTimes(received: string, n: number) {
     let found = 0
-    warn.mock.calls.forEach((args) => {
+    warn.mock.calls.forEach(args => {
       if (args[0].includes(received)) {
         found++
       }
@@ -81,8 +79,7 @@ expect.extend({
         pass: true,
         message: () => `expected "${received}" to have been warned ${n} times.`,
       }
-    }
-    else {
+    } else {
       return {
         pass: false,
         message: () =>
@@ -102,8 +99,8 @@ afterEach(() => {
   const assertedArray = Array.from(asserted)
   const nonAssertedWarnings = warn.mock.calls
     .map(args => args[0])
-    .filter((received) => {
-      return !assertedArray.some((assertedMsg) => {
+    .filter(received => {
+      return !assertedArray.some(assertedMsg => {
         return received.includes(assertedMsg)
       })
     })

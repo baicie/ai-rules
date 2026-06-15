@@ -23,20 +23,20 @@ pnpm dev
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development mode |
-| `pnpm build` | Build all packages |
-| `pnpm clean` | Remove build artifacts and caches |
-| `pnpm check` | Run TypeScript type checking |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Format code with Prettier |
-| `pnpm test` | Run all tests |
-| `pnpm test-unit` | Run unit tests |
-| `pnpm test-e2e` | Run E2E tests |
-| `pnpm docs:dev` | Start VitePress dev server |
-| `pnpm docs:build` | Build VitePress site |
-| `pnpm docs:preview` | Preview built VitePress site |
+| Command             | Description                       |
+| ------------------- | --------------------------------- |
+| `pnpm dev`          | Start development mode            |
+| `pnpm build`        | Build all packages                |
+| `pnpm clean`        | Remove build artifacts and caches |
+| `pnpm check`        | Run TypeScript type checking      |
+| `pnpm lint`         | Run ESLint                        |
+| `pnpm format`       | Format code with Prettier         |
+| `pnpm test`         | Run all tests                     |
+| `pnpm test-unit`    | Run unit tests                    |
+| `pnpm test-e2e`     | Run E2E tests                     |
+| `pnpm docs:dev`     | Start VitePress dev server        |
+| `pnpm docs:build`   | Build VitePress site              |
+| `pnpm docs:preview` | Preview built VitePress site      |
 
 ## Project Structure
 

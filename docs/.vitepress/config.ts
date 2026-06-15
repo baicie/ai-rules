@@ -6,28 +6,20 @@ export default defineConfig({
 
   cleanUrls: true,
 
-  head: [
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
-  ],
+  head: [['link', { rel: 'icon', href: '/favicon.ico' }]],
 
   themeConfig: {
     logo: '/logo.svg',
-    nav: [
-      { text: 'Guide', link: '/guide/getting-started' },
-    ],
+    nav: [{ text: 'Guide', link: '/guide/getting-started' }],
 
     sidebar: [
       {
         text: 'Guide',
-        items: [
-          { text: 'Getting Started', link: '/guide/getting-started' },
-        ],
+        items: [{ text: 'Getting Started', link: '/guide/getting-started' }],
       },
     ],
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/baicie/zeus' },
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/baicie/zeus' }],
 
     footer: {
       message: 'Released under the MIT License.',
