@@ -116,4 +116,26 @@ describe('runAddCommand', () => {
     )
     expect(config).toContain('agents/code-splitting')
   })
+
+  it('rejects bare agents source as invalid AgentMD snippet', async () => {
+    const cwd = createProject()
+
+    await expect(
+      runAddCommand({
+        cwd,
+        source: 'agents',
+      }),
+    ).rejects.toThrow(/Invalid AgentMD snippet source/)
+  }, 5000)
+
+  it('rejects nested agents path as invalid AgentMD snippet', async () => {
+    const cwd = createProject()
+
+    await expect(
+      runAddCommand({
+        cwd,
+        source: 'agents/foo/bar',
+      }),
+    ).rejects.toThrow(/Invalid AgentMD snippet source/)
+  }, 5000)
 })

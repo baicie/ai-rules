@@ -3,6 +3,7 @@ import type { ResolvedPackSource } from './source'
 import { existsSync, readFileSync } from 'node:fs'
 import { basename, dirname, extname, join, resolve } from 'node:path'
 import { AirulesPackSchema } from '@baicie/airules-schema'
+import { isAgentMdSnippetSource } from './source-spec'
 
 export interface LoadedAirulesPack {
   root: string
@@ -13,7 +14,14 @@ export interface LoadedAirulesPack {
 
 export function loadLocalPack(source: ResolvedPackSource): LoadedAirulesPack {
   const sourcePath = source.root
+
   if (extname(sourcePath) === '.md') {
+    if (!isResolvedAgentMdSnippetSource(source)) {
+      throw new Error(
+        `Markdown files are not valid airules packs: ${source.source}. Use agents/<name> for AgentMD snippets.`,
+      )
+    }
+
     return loadAgentMdSnippet(sourcePath)
   }
 
@@ -36,6 +44,14 @@ export function loadLocalPack(source: ResolvedPackSource): LoadedAirulesPack {
     pack,
     rawContent,
   }
+}
+
+function isResolvedAgentMdSnippetSource(source: ResolvedPackSource): boolean {
+  const normalized = source.source.startsWith('local:')
+    ? source.source.slice('local:'.length)
+    : source.source
+
+  return isAgentMdSnippetSource(normalized)
 }
 
 function loadAgentMdSnippet(sourcePath: string): LoadedAirulesPack {

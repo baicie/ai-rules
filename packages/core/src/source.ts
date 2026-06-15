@@ -1,13 +1,16 @@
 import type { AirulesResolvedSource } from '@baicie/airules-schema'
 import type { ResolvedGitHubPackSource } from './github-source'
 import type { ResolvedNpmPackSource } from './npm-source'
-import { existsSync } from 'node:fs'
 import { isAbsolute, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isGitHubSource, resolveGitHubPackSource } from './github-source'
 import { isNpmSource, resolveNpmPackSource } from './npm-source'
-import { normalizePackSourceInput } from './source-spec'
+import {
+  assertAgentMdSnippetSource,
+  isAgentMdSourceLike,
+  normalizePackSourceInput,
+} from './source-spec'
 
 export interface ResolvedPackSource {
   source: string
@@ -65,13 +68,25 @@ export function resolveLocalPackSource(
     ? fileURLToPath(normalizedSource)
     : normalizedSource
 
-  const resolvedPath = isAbsolute(localPath)
-    ? localPath
-    : resolve(cwd, localPath)
-  const root =
-    !existsSync(resolvedPath) && existsSync(`${resolvedPath}.md`)
-      ? `${resolvedPath}.md`
-      : resolvedPath
+  if (isAgentMdSourceLike(localPath)) {
+    assertAgentMdSnippetSource(localPath)
+    const snippetSource = localPath.endsWith('.md')
+      ? localPath
+      : `${localPath}.md`
+    const root = isAbsolute(snippetSource)
+      ? snippetSource
+      : resolve(cwd, snippetSource)
+    return {
+      source,
+      root,
+      resolved: {
+        type: 'local',
+        path: root,
+      },
+    }
+  }
+
+  const root = isAbsolute(localPath) ? localPath : resolve(cwd, localPath)
 
   return {
     source,

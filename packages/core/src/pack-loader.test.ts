@@ -85,4 +85,44 @@ describe('loadLocalPack', () => {
     expect(loaded.root).toBe(join(root, 'agents'))
     expect(loaded.rawContent).toContain('## Code Splitting')
   })
+
+  it('loads an AgentMD markdown snippet with explicit .md extension', () => {
+    const root = createTempDir()
+    mkdirSync(join(root, 'agents'), {
+      recursive: true,
+    })
+
+    writeFileSync(
+      join(root, 'agents/testing.md'),
+      '## Testing\n\n- Add tests.\n',
+    )
+
+    const source = resolveLocalPackSource('agents/testing.md', root)
+    const loaded = loadLocalPack(source)
+
+    expect(loaded.pack.name).toBe('@local/agentmd-testing')
+    expect(loaded.root).toBe(join(root, 'agents'))
+  })
+
+  it('does not treat arbitrary markdown files as AgentMD snippets', () => {
+    const root = createTempDir()
+    writeFileSync(join(root, 'README.md'), '# README\n')
+
+    const source = resolveLocalPackSource('./README.md', root)
+
+    expect(() => loadLocalPack(source)).toThrow(/Markdown files are not valid/)
+  })
+
+  it('throws when AgentMD snippet file does not exist', () => {
+    const root = createTempDir()
+    mkdirSync(join(root, 'agents'), {
+      recursive: true,
+    })
+
+    const source = resolveLocalPackSource('agents/nonexistent', root)
+
+    expect(() => loadLocalPack(source)).toThrow(
+      /Cannot find AgentMD snippet at/,
+    )
+  })
 })

@@ -20,6 +20,26 @@ describe('resolveLocalPackSource', () => {
     expect(result.root).toMatch(/[\\/]repo[\\/]packs[\\/]react-shadcn$/)
   })
 
+  it('resolves agents snippet source to markdown file', () => {
+    const result = resolveLocalPackSource('agents/code-splitting', '/repo')
+
+    expect(result.source).toBe('agents/code-splitting')
+    expect(result.root).toMatch(/[\\/]repo[\\/]agents[\\/]code-splitting\.md$/)
+    expect(result.resolved.type).toBe('local')
+  })
+
+  it('resolves agents snippet with explicit .md extension', () => {
+    const result = resolveLocalPackSource('agents/testing.md', '/repo')
+
+    expect(result.root).toMatch(/[\\/]repo[\\/]agents[\\/]testing\.md$/)
+  })
+
+  it('does not auto append .md for non-agents local sources', () => {
+    const result = resolveLocalPackSource('docs/rules', '/repo')
+
+    expect(result.root).toMatch(/[\\/]repo[\\/]docs[\\/]rules$/)
+  })
+
   it('tells callers to use resolvePackSource for github source', () => {
     expect(() =>
       resolveLocalPackSource('github:baicie/ai-rules/packs/react-shadcn'),

@@ -9,7 +9,7 @@ export function normalizePackSourceInput(source: string): string {
     return githubUrlSource
   }
 
-  if (isAgentMdSnippetSource(trimmed)) {
+  if (isAgentMdSourceLike(trimmed) && !isAgentMdSnippetSource(trimmed)) {
     return trimmed
   }
 
@@ -27,21 +27,78 @@ export function normalizePackSourceInput(source: string): string {
 export function isDirectPackSourceInput(source: string): boolean {
   const normalized = normalizePackSourceInput(source)
 
-  return (
+  if (
     normalized.startsWith('./') ||
     normalized.startsWith('../') ||
     normalized.startsWith('/') ||
-    normalized.startsWith('agents/') ||
     normalized.startsWith('local:') ||
     normalized.startsWith('file://') ||
     normalized.startsWith('github:') ||
     normalized.startsWith('npm:') ||
     normalized.startsWith('http://') ||
     normalized.startsWith('https://')
-  )
+  ) {
+    return true
+  }
+
+  if (isAgentMdSourceLike(normalized)) {
+    return true
+  }
+
+  return false
 }
 
-function isAgentMdSnippetSource(source: string): boolean {
+export function isAgentMdSnippetSource(source: string): boolean {
+  const trimmed = source.trim()
+
+  if (!trimmed.startsWith('agents/')) {
+    return false
+  }
+
+  const rest = trimmed.slice('agents/'.length)
+
+  if (rest.length === 0) {
+    return false
+  }
+
+  if (rest.includes('\\')) {
+    return false
+  }
+
+  if (rest.includes('/')) {
+    return false
+  }
+
+  if (rest === '.' || rest === '..') {
+    return false
+  }
+
+  if (rest.includes('..')) {
+    return false
+  }
+
+  return true
+}
+
+export function toAgentMdSnippetFileSource(source: string): string {
+  assertAgentMdSnippetSource(source)
+
+  return source.endsWith('.md') ? source : `${source}.md`
+}
+
+export function isAgentMdSnippetFileSource(source: string): boolean {
+  return isAgentMdSnippetSource(source) || source.endsWith('.md')
+}
+
+export function assertAgentMdSnippetSource(source: string): void {
+  if (!isAgentMdSnippetSource(source)) {
+    throw new Error(
+      `Invalid AgentMD snippet source "${source}". Expected agents/<name> or agents/<name>.md.`,
+    )
+  }
+}
+
+export function isAgentMdSourceLike(source: string): boolean {
   return source === 'agents' || source.startsWith('agents/')
 }
 
@@ -101,7 +158,8 @@ function isGitHubShorthand(source: string): boolean {
     source.startsWith('../') ||
     source.startsWith('/') ||
     source.startsWith('http://') ||
-    source.startsWith('https://')
+    source.startsWith('https://') ||
+    source.startsWith('agents/')
   ) {
     return false
   }

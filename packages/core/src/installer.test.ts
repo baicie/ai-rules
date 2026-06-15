@@ -379,6 +379,18 @@ describe('installLocalPack', () => {
     expect(block).toContain('<!-- airules:start')
     expect(block).toContain('## Core')
   })
+
+  it('does not install arbitrary markdown files as AgentMD snippets', async () => {
+    const cwd = createTempProject()
+    writeFileSync(join(cwd, 'README.md'), '# README\n')
+
+    await expect(
+      installPack({
+        cwd,
+        source: './README.md',
+      }),
+    ).rejects.toThrow(/Markdown files are not valid airules packs/)
+  })
 })
 
 afterEach(() => {

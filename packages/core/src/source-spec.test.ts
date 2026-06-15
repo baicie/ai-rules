@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  isAgentMdSnippetSource,
   isDirectPackSourceInput,
   normalizePackSourceInput,
+  toAgentMdSnippetFileSource,
 } from './source-spec'
 
 describe('normalizePackSourceInput', () => {
@@ -50,6 +52,15 @@ describe('normalizePackSourceInput', () => {
     expect(normalizePackSourceInput('agents/code-splitting')).toBe(
       'agents/code-splitting',
     )
+    expect(normalizePackSourceInput('agents/code-splitting.md')).toBe(
+      'agents/code-splitting.md',
+    )
+  })
+
+  it('passes through invalid agents sources without throwing', () => {
+    expect(normalizePackSourceInput('agents')).toBe('agents')
+    expect(normalizePackSourceInput('agents/')).toBe('agents/')
+    expect(normalizePackSourceInput('agents/foo/bar')).toBe('agents/foo/bar')
   })
 })
 
@@ -65,7 +76,53 @@ describe('isDirectPackSourceInput', () => {
     expect(isDirectPackSourceInput('shadcn')).toBe(false)
   })
 
-  it('treats agents snippets as direct local sources', () => {
+  it('treats agents/ prefixes as direct local sources', () => {
     expect(isDirectPackSourceInput('agents/code-splitting')).toBe(true)
+    expect(isDirectPackSourceInput('agents')).toBe(true)
+    expect(isDirectPackSourceInput('agents/')).toBe(true)
+    expect(isDirectPackSourceInput('agents/foo/bar')).toBe(true)
+  })
+})
+
+describe('isAgentMdSnippetSource', () => {
+  it('accepts one-segment agent snippets', () => {
+    expect(isAgentMdSnippetSource('agents/code-splitting')).toBe(true)
+    expect(isAgentMdSnippetSource('agents/code-splitting.md')).toBe(true)
+  })
+
+  it('rejects directory and traversal inputs', () => {
+    expect(isAgentMdSnippetSource('agents')).toBe(false)
+    expect(isAgentMdSnippetSource('agents/')).toBe(false)
+    expect(isAgentMdSnippetSource('agents/foo/bar')).toBe(false)
+    expect(isAgentMdSnippetSource('agents/../secret')).toBe(false)
+  })
+
+  it('rejects backslash path traversal', () => {
+    expect(isAgentMdSnippetSource('agents/..\\secret')).toBe(false)
+  })
+
+  it('rejects dots-only segments', () => {
+    expect(isAgentMdSnippetSource('agents/.')).toBe(false)
+    expect(isAgentMdSnippetSource('agents/..')).toBe(false)
+  })
+})
+
+describe('toAgentMdSnippetFileSource', () => {
+  it('adds .md when omitted', () => {
+    expect(toAgentMdSnippetFileSource('agents/code-splitting')).toBe(
+      'agents/code-splitting.md',
+    )
+  })
+
+  it('keeps explicit .md', () => {
+    expect(toAgentMdSnippetFileSource('agents/code-splitting.md')).toBe(
+      'agents/code-splitting.md',
+    )
+  })
+
+  it('throws for non-agentmd sources', () => {
+    expect(() => toAgentMdSnippetFileSource('docs/rules')).toThrow(
+      /Invalid AgentMD/,
+    )
   })
 })
