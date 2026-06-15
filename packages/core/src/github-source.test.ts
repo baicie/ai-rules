@@ -113,6 +113,30 @@ describe('resolveGitHubPackSource', () => {
     })
   })
 
+  it('resolves omitted ref from cache without github metadata requests', async () => {
+    const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
+
+    const fetchMock = createMockFetch()
+    const fetchSpy = vi.fn(fetchMock)
+    vi.stubGlobal('fetch', fetchSpy)
+    fetchSpy.mockImplementation(fetchMock)
+
+    const first = await resolveGitHubPackSource(
+      'github:baicie/ai-rules/packs/react-shadcn',
+      cwd,
+    )
+
+    fetchSpy.mockClear()
+    const second = await resolveGitHubPackSource(
+      'github:baicie/ai-rules/packs/react-shadcn',
+      cwd,
+    )
+
+    expect(second).toEqual(first)
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
   it('creates deterministic cache path', () => {
     vi.stubEnv(AIRULES_CACHE_ENV, '/airules-cache')
 
@@ -181,6 +205,7 @@ describe('resolveGitHubPackSource', () => {
     expect(shorthand.root).toBe(explicit.root)
 
     const calledUrls = fetchSpy.mock.calls.map(call => String(call[0]))
+    expect(calledUrls).toEqual([])
     expect(calledUrls.some(url => url.includes('/git/trees/'))).toBe(false)
     expect(calledUrls.some(url => url.includes('/git/blobs/'))).toBe(false)
   })

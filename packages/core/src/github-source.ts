@@ -70,11 +70,39 @@ interface DiscoveredGitHubPackRoot {
   path: string
 }
 
+interface GitHubCommitMarker {
+  owner: string
+  repo: string
+  ref: string
+  treeSha: string
+  subPaths: string
+  stripMode: string
+  entryFilterName: string
+}
+
+interface GitHubCacheHit {
+  root: string
+  ref: string
+  commit: string
+  treeSha: string
+  mtimeMs: number
+}
+
 export async function resolveGitHubPackSource(
   source: string,
   cwd = process.cwd(),
 ): Promise<ResolvedGitHubPackSource> {
   const parsed = parseGitHubSource(source)
+  const cached = resolveGitHubPackSourceFromCache({
+    parsed,
+    source,
+    cwd,
+  })
+
+  if (cached !== null) {
+    return cached
+  }
+
   const ref =
     parsed.ref !== undefined ? parsed.ref : await fetchDefaultBranch(parsed)
   const commit = await fetchGitHubCommit(parsed, ref)
@@ -181,6 +209,116 @@ export async function resolveGitHubPackSource(
       path: discovery.path,
       ref,
       commit: commit.sha,
+    },
+  }
+}
+
+function resolveGitHubPackSourceFromCache(options: {
+  parsed: ParsedGitHubSource
+  source: string
+  cwd: string
+}): ResolvedGitHubPackSource | null {
+  if (options.parsed.path.length > 0) {
+    const hit = findGitHubCacheHit({
+      parsed: options.parsed,
+      path: options.parsed.path,
+      ref: options.parsed.ref,
+      subPaths: [options.parsed.path],
+      stripPrefix: true,
+    })
+
+    if (hit !== null) {
+      return createResolvedGitHubPackSource({
+        source: options.source,
+        root: hit.root,
+        parsed: options.parsed,
+        path: options.parsed.path,
+        ref: hit.ref,
+        commit: hit.commit,
+      })
+    }
+
+    return null
+  }
+
+  const metadataHit = findGitHubCacheHit({
+    parsed: options.parsed,
+    path: '',
+    ref: options.parsed.ref,
+    subPaths: ['', 'packs'],
+    entryFilter: isRepositoryMetadataEntry,
+  })
+
+  if (metadataHit === null) {
+    return null
+  }
+
+  const discovery = discoverGitHubRepositoryPackRoot({
+    cacheRoot: metadataHit.root,
+    parsed: options.parsed,
+    ref: metadataHit.ref,
+    source: options.source,
+  })
+
+  if (discovery.path === '') {
+    return createResolvedGitHubPackSource({
+      source: options.source,
+      root: metadataHit.root,
+      parsed: options.parsed,
+      path: '',
+      ref: metadataHit.ref,
+      commit: metadataHit.commit,
+    })
+  }
+
+  const packCacheRoot = getGitHubPackCacheRoot(options.cwd, {
+    owner: options.parsed.owner,
+    repo: options.parsed.repo,
+    commit: metadataHit.commit,
+    path: discovery.path,
+  })
+  const packHit = readGitHubCacheHitAtRoot({
+    parsed: options.parsed,
+    cacheRoot: packCacheRoot,
+    commit: metadataHit.commit,
+    ref: metadataHit.ref,
+    treeSha: metadataHit.treeSha,
+    subPaths: [discovery.path],
+    stripPrefix: true,
+  })
+
+  if (packHit === null) {
+    return null
+  }
+
+  return createResolvedGitHubPackSource({
+    source: options.source,
+    root: packHit.root,
+    parsed: options.parsed,
+    path: discovery.path,
+    ref: packHit.ref,
+    commit: packHit.commit,
+  })
+}
+
+function createResolvedGitHubPackSource(options: {
+  source: string
+  root: string
+  parsed: ParsedGitHubSource
+  path: string
+  ref: string
+  commit: string
+}): ResolvedGitHubPackSource {
+  return {
+    source: options.source,
+    root: options.root,
+    resolved: {
+      type: 'github',
+      owner: options.parsed.owner,
+      repo: options.parsed.repo,
+      path: options.path,
+      ref: options.ref,
+      commit: options.commit,
     },
   }
 }
@@ -483,18 +621,173 @@ export function getGitHubPackCacheRoot(
 ): string {
   void cwd
 
-  const pathHash = sha256(options.path || '.')
-    .replace(/^sha256-/, '')
-    .slice(0, 16)
-
   return join(
     getAirulesPackCacheDir(),
     'github',
     sanitizePathSegment(options.owner),
     sanitizePathSegment(options.repo),
     sanitizePathSegment(options.commit),
-    pathHash,
+    getGitHubPathHash(options.path),
   )
+}
+
+function findGitHubCacheHit(options: {
+  parsed: ParsedGitHubSource
+  path: string
+  ref?: string
+  subPaths: string[]
+  stripPrefix?: boolean
+  entryFilter?: (entryPath: string) => boolean
+}): GitHubCacheHit | null {
+  const repoCacheRoot = join(
+    getAirulesPackCacheDir(),
+    'github',
+    sanitizePathSegment(options.parsed.owner),
+    sanitizePathSegment(options.parsed.repo),
+  )
+
+  if (!existsSync(repoCacheRoot)) {
+    return null
+  }
+
+  const pathHash = getGitHubPathHash(options.path)
+  const hits: GitHubCacheHit[] = []
+
+  for (const commit of readdirSync(repoCacheRoot)) {
+    const cacheRoot = join(repoCacheRoot, commit, pathHash)
+    const hit = readGitHubCacheHitAtRoot({
+      parsed: options.parsed,
+      cacheRoot,
+      commit,
+      ref: options.ref,
+      subPaths: options.subPaths,
+      stripPrefix: options.stripPrefix,
+      entryFilter: options.entryFilter,
+    })
+
+    if (hit !== null) {
+      hits.push(hit)
+    }
+  }
+
+  if (hits.length === 0) {
+    return null
+  }
+
+  hits.sort((left, right) => {
+    if (right.mtimeMs !== left.mtimeMs) {
+      return right.mtimeMs - left.mtimeMs
+    }
+
+    return right.commit.localeCompare(left.commit)
+  })
+
+  const hit = hits[0]
+  return hit !== undefined ? hit : null
+}
+
+function readGitHubCacheHitAtRoot(options: {
+  parsed: ParsedGitHubSource
+  cacheRoot: string
+  commit: string
+  ref?: string
+  treeSha?: string
+  subPaths: string[]
+  stripPrefix?: boolean
+  entryFilter?: (entryPath: string) => boolean
+}): GitHubCacheHit | null {
+  const commitMarker = join(options.cacheRoot, '.commit')
+
+  if (!existsSync(options.cacheRoot) || !existsSync(commitMarker)) {
+    return null
+  }
+
+  const marker = parseGitHubCommitMarker(readFileSync(commitMarker, 'utf8'))
+  if (marker === null) {
+    return null
+  }
+
+  if (
+    marker.owner !== options.parsed.owner ||
+    marker.repo !== options.parsed.repo
+  ) {
+    return null
+  }
+
+  if (options.ref !== undefined && marker.ref !== options.ref) {
+    return null
+  }
+
+  if (options.treeSha !== undefined && marker.treeSha !== options.treeSha) {
+    return null
+  }
+
+  if (marker.subPaths !== options.subPaths.join('|')) {
+    return null
+  }
+
+  if (marker.stripMode !== (options.stripPrefix ? 'strip' : 'keep')) {
+    return null
+  }
+
+  const entryFilterName =
+    options.entryFilter !== undefined ? options.entryFilter.name : 'no-filter'
+
+  if (marker.entryFilterName !== entryFilterName) {
+    return null
+  }
+
+  return {
+    root: options.cacheRoot,
+    ref: marker.ref,
+    commit: options.commit,
+    treeSha: marker.treeSha,
+    mtimeMs: statSync(commitMarker).mtimeMs,
+  }
+}
+
+function parseGitHubCommitMarker(value: string): GitHubCommitMarker | null {
+  const lines = value.trim().split('\n')
+
+  if (lines.length < 7) {
+    return null
+  }
+
+  const owner = lines[0]
+  const repo = lines[1]
+  const ref = lines[2]
+  const treeSha = lines[3]
+  const subPaths = lines[4]
+  const stripMode = lines[5]
+  const entryFilterName = lines[6]
+
+  if (
+    owner === undefined ||
+    repo === undefined ||
+    ref === undefined ||
+    treeSha === undefined ||
+    subPaths === undefined ||
+    stripMode === undefined ||
+    entryFilterName === undefined
+  ) {
+    return null
+  }
+
+  return {
+    owner,
+    repo,
+    ref,
+    treeSha,
+    subPaths,
+    stripMode,
+    entryFilterName,
+  }
+}
+
+function getGitHubPathHash(path: string): string {
+  return sha256(path || '.')
+    .replace(/^sha256-/, '')
+    .slice(0, 16)
 }
 
 async function fetchDefaultBranch(parsed: ParsedGitHubSource): Promise<string> {
