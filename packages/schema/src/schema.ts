@@ -145,6 +145,7 @@ export const AirulesRegistrySchema = z.object({
   name: z.string().optional(),
   version: z.string().optional(),
   description: z.string().optional(),
+  defaultPack: z.string().min(1).optional(),
   packs: z.array(AirulesRegistryPackSchema),
 })
 

@@ -10,6 +10,7 @@ export interface RegistryPublishCommandOptions {
   description?: string
   homepage?: string
   deprecated?: string | boolean
+  makeDefault?: boolean
 }
 
 export async function runRegistryPublishCommand(
@@ -25,6 +26,7 @@ export async function runRegistryPublishCommand(
     description: options.description,
     homepage: options.homepage,
     deprecated: options.deprecated,
+    makeDefault: options.makeDefault,
   })
 
   console.info('airules registry publish')

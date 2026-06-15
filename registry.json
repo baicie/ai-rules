@@ -3,6 +3,7 @@
   "name": "@baicie/default",
   "version": "0.1.0",
   "description": "Default airules registry",
+  "defaultPack": "@baicie/react-shadcn",
   "packs": [
     {
       "name": "@baicie/react-shadcn",

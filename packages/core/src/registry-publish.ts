@@ -21,6 +21,7 @@ export interface PublishPackToRegistryOptions {
   description?: string
   homepage?: string
   deprecated?: boolean | string
+  makeDefault?: boolean
 }
 
 export interface PublishPackToRegistryResult {
@@ -90,6 +91,10 @@ export function publishPackToRegistry(
       ...registry.packs[previousIndex],
       ...packEntry,
     }
+  }
+
+  if (options.makeDefault === true || !existed) {
+    registry.defaultPack = packEntry.name
   }
 
   registry.packs.sort((a, b) => a.name.localeCompare(b.name))

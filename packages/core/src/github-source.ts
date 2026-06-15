@@ -1,8 +1,21 @@
-import type { AirulesResolvedSource } from '@baicie/airules-schema'
+import type {
+  AirulesRegistry,
+  AirulesRegistryPack,
+  AirulesResolvedSource,
+} from '@baicie/airules-schema'
 import { Buffer } from 'node:buffer'
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
+import { AirulesRegistrySchema } from '@baicie/airules-schema'
 import { getAirulesPackCacheDir } from './cache-path'
 import { sha256 } from './hash'
 
@@ -52,6 +65,11 @@ interface GitHubBlobResponse {
   sha?: string
 }
 
+interface DiscoveredGitHubPackRoot {
+  root: string
+  path: string
+}
+
 export async function resolveGitHubPackSource(
   source: string,
   cwd = process.cwd(),
@@ -82,18 +100,31 @@ export async function resolveGitHubPackSource(
     cacheRoot,
   })
 
+  const discovered =
+    parsed.path.length === 0
+      ? discoverGitHubRepositoryPackRoot({
+          cacheRoot,
+          parsed,
+          ref,
+          source,
+        })
+      : {
+          root: cacheRoot,
+          path: parsed.path,
+        }
+
   const resolved: ResolvedGitHubPackSource['resolved'] = {
     type: 'github',
     owner: parsed.owner,
     repo: parsed.repo,
-    path: parsed.path,
+    path: discovered.path,
     ref,
     commit: commit.sha,
   }
 
   return {
     source,
-    root: cacheRoot,
+    root: discovered.root,
     resolved,
   }
 }
@@ -159,6 +190,226 @@ export function parseGitHubSource(source: string): ParsedGitHubSource {
   }
 
   return result
+}
+
+function discoverGitHubRepositoryPackRoot(options: {
+  cacheRoot: string
+  parsed: ParsedGitHubSource
+  ref: string
+  source: string
+}): DiscoveredGitHubPackRoot {
+  const rootPackFile = join(options.cacheRoot, 'airules.pack.json')
+
+  if (existsSync(rootPackFile)) {
+    return {
+      root: options.cacheRoot,
+      path: '',
+    }
+  }
+
+  const registryPath = join(options.cacheRoot, 'registry.json')
+  if (existsSync(registryPath)) {
+    const registry = readRegistry(registryPath)
+    const registryDefault = resolveRegistryDefaultPackPath({
+      registry,
+      parsed: options.parsed,
+      ref: options.ref,
+    })
+
+    if (registryDefault !== null) {
+      const packRoot = join(options.cacheRoot, registryDefault)
+      assertDiscoveredPackExists({
+        source: options.source,
+        cacheRoot: options.cacheRoot,
+        packPath: registryDefault,
+        packRoot,
+      })
+
+      return {
+        root: packRoot,
+        path: registryDefault,
+      }
+    }
+
+    if (registry.packs.length > 1) {
+      throw new Error(
+        [
+          `GitHub repository "${options.parsed.owner}/${options.parsed.repo}" contains registry.json with multiple packs but no defaultPack.`,
+          `Set "defaultPack" in registry.json, or specify a pack path explicitly:`,
+          `  github:${options.parsed.owner}/${options.parsed.repo}/packs/<pack>${options.ref ? `#${options.ref}` : ''}`,
+          `Available packs: ${registry.packs.map(pack => pack.name).join(', ')}`,
+        ].join('\n'),
+      )
+    }
+  }
+
+  const discoveredPackPaths = discoverPacksDirectoryPackPaths(options.cacheRoot)
+
+  if (discoveredPackPaths.length === 1) {
+    const packPath = discoveredPackPaths[0]
+    if (packPath !== undefined) {
+      return {
+        root: join(options.cacheRoot, packPath),
+        path: packPath,
+      }
+    }
+  }
+
+  if (discoveredPackPaths.length > 1) {
+    throw new Error(
+      [
+        `GitHub repository "${options.parsed.owner}/${options.parsed.repo}" contains multiple packs.`,
+        `Set "defaultPack" in registry.json, or specify a pack path explicitly:`,
+        `  github:${options.parsed.owner}/${options.parsed.repo}/packs/<pack>${options.ref ? `#${options.ref}` : ''}`,
+        `Available pack paths: ${discoveredPackPaths.join(', ')}`,
+      ].join('\n'),
+    )
+  }
+
+  throw new Error(
+    [
+      `Cannot find default airules pack in GitHub repository "${options.parsed.owner}/${options.parsed.repo}".`,
+      `Expected one of:`,
+      `  - airules.pack.json at repository root`,
+      `  - registry.json with "defaultPack"`,
+      `  - exactly one packs/*/airules.pack.json`,
+    ].join('\n'),
+  )
+}
+
+function readRegistry(registryPath: string): AirulesRegistry {
+  const raw = JSON.parse(readFileSync(registryPath, 'utf8'))
+  return AirulesRegistrySchema.parse(raw)
+}
+
+function resolveRegistryDefaultPackPath(options: {
+  registry: AirulesRegistry
+  parsed: ParsedGitHubSource
+  ref: string
+}): string | null {
+  const defaultPackName = options.registry.defaultPack
+
+  if (defaultPackName !== undefined) {
+    const entry = findRegistryPack(options.registry, defaultPackName)
+
+    if (entry === null) {
+      throw new Error(
+        `registry.json defaultPack "${defaultPackName}" does not match any pack name or alias.`,
+      )
+    }
+
+    return resolveRegistryPackPath({
+      entry,
+      parsed: options.parsed,
+      ref: options.ref,
+    })
+  }
+
+  if (options.registry.packs.length === 1) {
+    const entry = options.registry.packs[0]
+    if (entry !== undefined) {
+      return resolveRegistryPackPath({
+        entry,
+        parsed: options.parsed,
+        ref: options.ref,
+      })
+    }
+  }
+
+  return null
+}
+
+function findRegistryPack(
+  registry: AirulesRegistry,
+  nameOrAlias: string,
+): AirulesRegistryPack | null {
+  for (const pack of registry.packs) {
+    if (pack.name === nameOrAlias) {
+      return pack
+    }
+
+    if (pack.aliases?.includes(nameOrAlias)) {
+      return pack
+    }
+  }
+
+  return null
+}
+
+function resolveRegistryPackPath(options: {
+  entry: AirulesRegistryPack
+  parsed: ParsedGitHubSource
+  ref: string
+}): string {
+  if (options.entry.source.startsWith('github:')) {
+    const entrySource = parseGitHubSource(options.entry.source)
+
+    if (
+      entrySource.owner === options.parsed.owner &&
+      entrySource.repo === options.parsed.repo
+    ) {
+      return entrySource.path
+    }
+
+    throw new Error(
+      `registry default pack source points to another repository: ${options.entry.source}`,
+    )
+  }
+
+  if (
+    options.entry.source.startsWith('./') ||
+    options.entry.source.startsWith('packs/')
+  ) {
+    return normalizeGitHubPath(
+      options.entry.source.replace(/^\.\//, '').replace(/^\/+/, ''),
+    )
+  }
+
+  throw new Error(
+    `registry default pack must point to a pack path in the same GitHub repository: ${options.entry.source}`,
+  )
+}
+
+function discoverPacksDirectoryPackPaths(cacheRoot: string): string[] {
+  const packsRoot = join(cacheRoot, 'packs')
+
+  if (!existsSync(packsRoot)) {
+    return []
+  }
+
+  const result: string[] = []
+
+  for (const entry of readdirSync(packsRoot)) {
+    const packRoot = join(packsRoot, entry)
+
+    if (!statSync(packRoot).isDirectory()) {
+      continue
+    }
+
+    if (existsSync(join(packRoot, 'airules.pack.json'))) {
+      result.push(normalizeGitHubPath(`packs/${entry}`))
+    }
+  }
+
+  result.sort()
+  return result
+}
+
+function assertDiscoveredPackExists(options: {
+  source: string
+  cacheRoot: string
+  packPath: string
+  packRoot: string
+}): void {
+  const target = resolve(options.packRoot)
+  assertInsideDirectory(options.cacheRoot, target)
+
+  const packFile = join(target, 'airules.pack.json')
+  if (!existsSync(packFile)) {
+    throw new Error(
+      `Default pack "${options.packPath}" from "${options.source}" does not contain airules.pack.json.`,
+    )
+  }
 }
 
 export function isGitHubSource(source: string): boolean {

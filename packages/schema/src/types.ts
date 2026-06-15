@@ -109,6 +109,7 @@ export interface AirulesRegistry {
   name?: string
   version?: string
   description?: string
+  defaultPack?: string
   packs: AirulesRegistryPack[]
 }
 

@@ -130,4 +130,66 @@ describe('publishPackToRegistry', () => {
 
     expect(existsSync(join(cwd, 'dist/registry/registry.json'))).toBe(true)
   })
+
+  it('marks published pack as defaultPack when requested', () => {
+    const { cwd, packRoot } = createPack()
+
+    publishPackToRegistry({
+      cwd,
+      packPath: packRoot,
+      registryPath: 'registry.json',
+      source: './packs/react-shadcn',
+      makeDefault: true,
+    })
+
+    const registry = JSON.parse(
+      readFileSync(join(cwd, 'registry.json'), 'utf8'),
+    )
+    expect(registry.defaultPack).toBe('@baicie/react-shadcn')
+  })
+
+  it('auto-sets defaultPack on first create-registry', () => {
+    const { cwd, packRoot } = createPack()
+
+    publishPackToRegistry({
+      cwd,
+      packPath: packRoot,
+      registryPath: 'registry.json',
+      source: './packs/react-shadcn',
+    })
+
+    const registry = JSON.parse(
+      readFileSync(join(cwd, 'registry.json'), 'utf8'),
+    )
+    expect(registry.defaultPack).toBe('@baicie/react-shadcn')
+  })
+
+  it('does not overwrite defaultPack on subsequent updates', () => {
+    const { cwd, packRoot } = createPack()
+
+    writeFileSync(
+      join(cwd, 'registry.json'),
+      JSON.stringify({
+        defaultPack: '@baicie/old-default',
+        packs: [
+          {
+            name: '@baicie/react-shadcn',
+            source: './old',
+          },
+        ],
+      }),
+    )
+
+    publishPackToRegistry({
+      cwd,
+      packPath: packRoot,
+      registryPath: 'registry.json',
+      source: './new',
+    })
+
+    const registry = JSON.parse(
+      readFileSync(join(cwd, 'registry.json'), 'utf8'),
+    )
+    expect(registry.defaultPack).toBe('@baicie/old-default')
+  })
 })

@@ -247,6 +247,7 @@ export function runCli(argv = process.argv): void {
     .option('--description <description>', 'Override description')
     .option('--homepage <homepage>', 'Homepage URL')
     .option('--deprecated <reason>', 'Mark as deprecated')
+    .option('--default', 'Mark this pack as registry defaultPack')
     .action(
       async (
         packPath: string,
@@ -258,6 +259,7 @@ export function runCli(argv = process.argv): void {
           description?: string
           homepage?: string
           deprecated?: string
+          default?: boolean
         },
       ) => {
         if (options.registry === undefined) {
@@ -278,6 +280,7 @@ export function runCli(argv = process.argv): void {
           description: options.description,
           homepage: options.homepage,
           deprecated: options.deprecated,
+          makeDefault: Boolean(options.default),
         })
       },
     )
@@ -294,6 +297,7 @@ export function runCli(argv = process.argv): void {
     .option('--description <description>', 'Override description')
     .option('--homepage <homepage>', 'Homepage URL')
     .option('--deprecated <reason>', 'Mark as deprecated')
+    .option('--default', 'Mark this pack as registry defaultPack')
     .action(
       async (
         packPath: string,
@@ -305,6 +309,7 @@ export function runCli(argv = process.argv): void {
           description?: string
           homepage?: string
           deprecated?: string
+          default?: boolean
         },
       ) => {
         if (options.registry === undefined) {
@@ -325,6 +330,7 @@ export function runCli(argv = process.argv): void {
           description: options.description,
           homepage: options.homepage,
           deprecated: options.deprecated,
+          makeDefault: Boolean(options.default),
         })
       },
     )

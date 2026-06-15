@@ -79,6 +79,25 @@ pnpm dlx @baicie/airules add https://github.com/baicie/ai-rules/tree/v0.1.0/pack
 pnpm dlx @baicie/airules add @baicie/airules-react-shadcn@0.1.0
 ```
 
+## Add repository shorthand
+
+If the target repository has a registry with `defaultPack` (or a single
+`packs/*/airules.pack.json`), the repository shorthand installs the default
+pack:
+
+```bash
+pnpm dlx @baicie/airules add baicie/ai-rules
+pnpm dlx @baicie/airules add baicie/ai-rules#main
+pnpm dlx @baicie/airules add https://github.com/baicie/ai-rules
+```
+
+If the repository has multiple packs and no `defaultPack`, airules asks you
+to specify the pack path explicitly:
+
+```bash
+pnpm dlx @baicie/airules add baicie/ai-rules/packs/react-shadcn
+```
+
 ## Commands
 
 ```bash
@@ -109,6 +128,8 @@ airules create registry
 ./packs/react-shadcn
 local:./packs/react-shadcn
 agents/code-splitting
+baicie/ai-rules
+baicie/ai-rules#main
 baicie/ai-rules/packs/react-shadcn#v0.1.0
 https://github.com/baicie/ai-rules/tree/v0.1.0/packs/react-shadcn
 @baicie/airules-react-shadcn@0.1.0

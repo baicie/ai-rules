@@ -127,6 +127,39 @@ describe('resolveGitHubPackSource', () => {
       /[\\/]airules-cache[\\/]packs[\\/]github[\\/]baicie[\\/]ai-rules[\\/]abc[\\/]/,
     )
   })
+
+  it('resolves repository shorthand root through registry defaultPack', () => {
+    const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
+    vi.stubGlobal('fetch', createRepoRootMockFetch())
+
+    return resolveGitHubPackSource('github:baicie/ai-rules#main', cwd).then(
+      resolved => {
+        expect(resolved.resolved).toEqual({
+          type: 'github',
+          owner: 'baicie',
+          repo: 'ai-rules',
+          path: 'packs/react-shadcn',
+          ref: 'main',
+          commit: 'commit-sha-123',
+        })
+
+        expect(existsSync(join(resolved.root, 'airules.pack.json'))).toBe(true)
+        expect(existsSync(join(resolved.root, 'modules/core.md'))).toBe(true)
+        expect(resolved.root).toMatch(/[\\/]packs[\\/]react-shadcn$/)
+      },
+    )
+  })
+
+  it('throws for repository root with multiple registry packs and no defaultPack', async () => {
+    const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
+    vi.stubGlobal('fetch', createRepoRootMockFetch({ omitDefaultPack: true }))
+
+    await expect(
+      resolveGitHubPackSource('github:baicie/ai-rules#main', cwd),
+    ).rejects.toThrow(/multiple packs but no defaultPack/)
+  })
 })
 
 function createMockFetch(): typeof fetch {
@@ -231,6 +264,142 @@ function createJsonResponse(body: unknown, status = 200): Response {
     json: async () => body,
     text: async () => JSON.stringify(body),
   } as Response
+}
+
+function createRepoRootMockFetch(
+  options: { omitDefaultPack?: boolean } = {},
+): typeof fetch {
+  return (async (input: string | URL | Request) => {
+    const url = String(input)
+
+    if (url === 'https://api.github.com/repos/baicie/ai-rules') {
+      return createJsonResponse({ default_branch: 'main' })
+    }
+
+    if (url === 'https://api.github.com/repos/baicie/ai-rules/commits/main') {
+      return createJsonResponse({
+        sha: 'commit-sha-123',
+        commit: { tree: { sha: 'tree-sha-123' } },
+      })
+    }
+
+    if (
+      url ===
+      'https://api.github.com/repos/baicie/ai-rules/git/trees/tree-sha-123?recursive=1'
+    ) {
+      return createJsonResponse({
+        truncated: false,
+        tree: [
+          { path: 'registry.json', type: 'blob', sha: 'blob-registry' },
+          {
+            path: 'packs/react-shadcn/airules.pack.json',
+            type: 'blob',
+            sha: 'blob-pack',
+          },
+          {
+            path: 'packs/react-shadcn/modules/core.md',
+            type: 'blob',
+            sha: 'blob-core',
+          },
+          {
+            path: 'packs/ts-monorepo/airules.pack.json',
+            type: 'blob',
+            sha: 'blob-ts-pack',
+          },
+        ],
+      })
+    }
+
+    if (
+      url ===
+      'https://api.github.com/repos/baicie/ai-rules/git/blobs/blob-registry'
+    ) {
+      return createJsonResponse({
+        encoding: 'base64',
+        content: Buffer.from(
+          JSON.stringify({
+            name: '@baicie/default',
+            version: '0.1.0',
+            ...(options.omitDefaultPack
+              ? {}
+              : { defaultPack: '@baicie/react-shadcn' }),
+            packs: [
+              {
+                name: '@baicie/react-shadcn',
+                source: 'github:baicie/ai-rules/packs/react-shadcn#v0.1.0',
+                aliases: ['shadcn', 'react-shadcn'],
+              },
+              {
+                name: '@baicie/ts-monorepo',
+                source: 'github:baicie/ai-rules/packs/ts-monorepo#v0.1.0',
+                aliases: ['ts-monorepo'],
+              },
+            ],
+          }),
+        ).toString('base64'),
+      })
+    }
+
+    if (
+      url === 'https://api.github.com/repos/baicie/ai-rules/git/blobs/blob-pack'
+    ) {
+      return createJsonResponse({
+        encoding: 'base64',
+        content: Buffer.from(
+          JSON.stringify({
+            name: '@baicie/react-shadcn',
+            version: '0.1.0',
+            modules: { core: 'modules/core.md' },
+            installs: [
+              {
+                id: 'codex',
+                agent: 'codex',
+                target: 'AGENTS.md',
+                mode: 'modules',
+                concat: ['core'],
+              },
+            ],
+          }),
+        ).toString('base64'),
+      })
+    }
+
+    if (
+      url ===
+      'https://api.github.com/repos/baicie/ai-rules/git/blobs/blob-ts-pack'
+    ) {
+      return createJsonResponse({
+        encoding: 'base64',
+        content: Buffer.from(
+          JSON.stringify({
+            name: '@baicie/ts-monorepo',
+            version: '0.1.0',
+            modules: { core: 'modules/core.md' },
+            installs: [
+              {
+                id: 'codex',
+                agent: 'codex',
+                target: 'AGENTS.md',
+                mode: 'modules',
+                concat: ['core'],
+              },
+            ],
+          }),
+        ).toString('base64'),
+      })
+    }
+
+    if (
+      url === 'https://api.github.com/repos/baicie/ai-rules/git/blobs/blob-core'
+    ) {
+      return createJsonResponse({
+        encoding: 'base64',
+        content: Buffer.from('## Core\n\n- Use TypeScript.').toString('base64'),
+      })
+    }
+
+    return createJsonResponse({ message: `Unexpected URL: ${url}` }, 404)
+  }) as typeof fetch
 }
 
 describe('github path safety', () => {

@@ -23,6 +23,20 @@ describe('normalizePackSourceInput', () => {
     ).toBe('github:baicie/ai-rules/packs/react-shadcn#v0.1.0')
   })
 
+  it('normalizes github repository shorthand', () => {
+    expect(normalizePackSourceInput('baicie/ai-rules')).toBe(
+      'github:baicie/ai-rules',
+    )
+
+    expect(normalizePackSourceInput('baicie/ai-rules#main')).toBe(
+      'github:baicie/ai-rules#main',
+    )
+
+    expect(normalizePackSourceInput('baicie/ai-rules#v0.1.0')).toBe(
+      'github:baicie/ai-rules#v0.1.0',
+    )
+  })
+
   it('normalizes github tree urls', () => {
     expect(
       normalizePackSourceInput(

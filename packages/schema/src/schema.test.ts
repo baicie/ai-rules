@@ -4,6 +4,7 @@ import {
   AirulesConfigSchema,
   AirulesLockfileSchema,
   AirulesPackSchema,
+  AirulesRegistrySchema,
 } from './index'
 
 describe('airulesPackSchema', () => {
@@ -120,6 +121,37 @@ describe('airulesConfigSchema', () => {
         },
       ],
     })
+  })
+})
+
+describe('airulesRegistrySchema', () => {
+  it('parses registry defaultPack', () => {
+    const registry = AirulesRegistrySchema.parse({
+      defaultPack: '@baicie/react-shadcn',
+      packs: [
+        {
+          name: '@baicie/react-shadcn',
+          source: 'github:baicie/ai-rules/packs/react-shadcn#v0.1.0',
+        },
+      ],
+    })
+
+    expect(registry.defaultPack).toBe('@baicie/react-shadcn')
+    expect(registry.packs[0]?.name).toBe('@baicie/react-shadcn')
+  })
+
+  it('rejects empty defaultPack', () => {
+    expect(() =>
+      AirulesRegistrySchema.parse({
+        defaultPack: '',
+        packs: [
+          {
+            name: '@baicie/react-shadcn',
+            source: 'github:baicie/ai-rules/packs/react-shadcn#v0.1.0',
+          },
+        ],
+      }),
+    ).toThrow()
   })
 })
 

@@ -188,7 +188,12 @@ function isNpmPackageSpec(source: string): boolean {
     return false
   }
 
-  return findVersionAtIndex(source) !== -1
+  const versionAt = findVersionAtIndex(source)
+  if (versionAt === -1) {
+    return false
+  }
+
+  return versionAt < source.length - 1
 }
 
 function findVersionAtIndex(value: string): number {
