@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -59,5 +59,30 @@ describe('loadLocalPack', () => {
     const source = resolveLocalPackSource(root)
 
     expect(() => loadLocalPack(source)).toThrow(/Cannot find airules.pack.json/)
+  })
+
+  it('loads an AgentMD markdown snippet as a pack', () => {
+    const root = createTempDir()
+    mkdirSync(join(root, 'agents'), {
+      recursive: true,
+    })
+
+    writeFileSync(
+      join(root, 'agents/code-splitting.md'),
+      '## Code Splitting\n\n- Keep files focused.\n',
+    )
+
+    const source = resolveLocalPackSource('agents/code-splitting', root)
+    const loaded = loadLocalPack(source)
+
+    expect(loaded.pack.name).toBe('@local/agentmd-code-splitting')
+    expect(loaded.pack.modules).toEqual({
+      main: 'code-splitting.md',
+    })
+    expect(loaded.pack.installs[0] && loaded.pack.installs[0].target).toBe(
+      'AGENTS.md',
+    )
+    expect(loaded.root).toBe(join(root, 'agents'))
+    expect(loaded.rawContent).toContain('## Code Splitting')
   })
 })

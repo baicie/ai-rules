@@ -45,6 +45,12 @@ describe('normalizePackSourceInput', () => {
       '@baicie/react-shadcn',
     )
   })
+
+  it('keeps agents snippets as local sources', () => {
+    expect(normalizePackSourceInput('agents/code-splitting')).toBe(
+      'agents/code-splitting',
+    )
+  })
 })
 
 describe('isDirectPackSourceInput', () => {
@@ -57,5 +63,9 @@ describe('isDirectPackSourceInput', () => {
 
   it('keeps bare aliases non-direct', () => {
     expect(isDirectPackSourceInput('shadcn')).toBe(false)
+  })
+
+  it('treats agents snippets as direct local sources', () => {
+    expect(isDirectPackSourceInput('agents/code-splitting')).toBe(true)
   })
 })

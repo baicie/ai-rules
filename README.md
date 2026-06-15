@@ -28,6 +28,16 @@ pnpm dlx @baicie/airules add ./packs/react-shadcn --agent codex,copilot,skill
 pnpm dlx @baicie/airules add shadcn --agent codex,copilot
 ```
 
+## Add AgentMD snippet
+
+Markdown files under `agents/` can be installed directly into `AGENTS.md`:
+
+```bash
+pnpm dlx @baicie/airules add agents/code-splitting
+pnpm dlx @baicie/airules add agents/testing
+pnpm dlx @baicie/airules add agents/code-review
+```
+
 ## Add remote pack
 
 ```bash
@@ -65,6 +75,7 @@ airules create registry
 ```txt
 ./packs/react-shadcn
 local:./packs/react-shadcn
+agents/code-splitting
 baicie/ai-rules/packs/react-shadcn#v0.1.0
 https://github.com/baicie/ai-rules/tree/v0.1.0/packs/react-shadcn
 @baicie/airules-react-shadcn@0.1.0

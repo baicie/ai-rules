@@ -9,6 +9,10 @@ export function normalizePackSourceInput(source: string): string {
     return githubUrlSource
   }
 
+  if (isAgentMdSnippetSource(trimmed)) {
+    return trimmed
+  }
+
   if (isGitHubShorthand(trimmed)) {
     return `github:${trimmed}`
   }
@@ -27,6 +31,7 @@ export function isDirectPackSourceInput(source: string): boolean {
     normalized.startsWith('./') ||
     normalized.startsWith('../') ||
     normalized.startsWith('/') ||
+    normalized.startsWith('agents/') ||
     normalized.startsWith('local:') ||
     normalized.startsWith('file://') ||
     normalized.startsWith('github:') ||
@@ -34,6 +39,10 @@ export function isDirectPackSourceInput(source: string): boolean {
     normalized.startsWith('http://') ||
     normalized.startsWith('https://')
   )
+}
+
+function isAgentMdSnippetSource(source: string): boolean {
+  return source === 'agents' || source.startsWith('agents/')
 }
 
 function normalizeGitHubUrl(source: string): string | null {

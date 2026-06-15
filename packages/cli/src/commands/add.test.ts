@@ -91,4 +91,29 @@ describe('runAddCommand', () => {
 
     expect(existsSync(join(cwd, 'AGENTS.md'))).toBe(false)
   })
+
+  it('adds an AgentMD markdown snippet from agents directory', async () => {
+    const cwd = createProject()
+    mkdirSync(join(cwd, 'agents'), {
+      recursive: true,
+    })
+    writeFileSync(
+      join(cwd, 'agents/code-splitting.md'),
+      '## Code Splitting\n\n- Keep files focused.\n',
+    )
+
+    await runAddCommand({
+      cwd,
+      source: 'agents/code-splitting',
+    })
+
+    const agents = readFileSync(join(cwd, 'AGENTS.md'), 'utf8')
+    expect(agents).toContain('## Code Splitting')
+
+    const config = readFileSync(
+      join(cwd, '.agents/agent/airules.config.ts'),
+      'utf8',
+    )
+    expect(config).toContain('agents/code-splitting')
+  })
 })

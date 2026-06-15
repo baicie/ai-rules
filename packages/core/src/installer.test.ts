@@ -154,6 +154,36 @@ describe('installLocalPack', () => {
     expect(agents).toContain('## Core')
   })
 
+  it('installs an AgentMD markdown snippet into AGENTS.md', async () => {
+    const cwd = createTempProject()
+    mkdirSync(join(cwd, 'agents'), {
+      recursive: true,
+    })
+    writeFileSync(
+      join(cwd, 'agents/code-splitting.md'),
+      '## Code Splitting\n\n- Keep files focused.\n',
+    )
+
+    const result = await installPack({
+      cwd,
+      source: 'agents/code-splitting',
+    })
+
+    expect(result.packName).toBe('@local/agentmd-code-splitting')
+
+    const agents = readFileSync(join(cwd, 'AGENTS.md'), 'utf8')
+    expect(agents).toContain('pack="@local/agentmd-code-splitting"')
+    expect(agents).toContain('## Code Splitting')
+
+    const lockfile = readAirulesLockfile(cwd)
+    expect(lockfile.packs[0] && lockfile.packs[0].source).toBe(
+      'agents/code-splitting',
+    )
+    expect(lockfile.installs[0] && lockfile.installs[0].installId).toBe(
+      'agentmd',
+    )
+  })
+
   it('supports dry-run without writing files or lockfile', () => {
     const cwd = createTempProject()
 
