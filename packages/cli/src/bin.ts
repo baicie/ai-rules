@@ -20,6 +20,7 @@ import { runRegistryPublishCommand } from './commands/registry-publish'
 import { runRemoveCommand } from './commands/remove'
 import { runSearchCommand } from './commands/search'
 import { runUpdateCommand } from './commands/update'
+import { AIRULES_VERSION } from './version'
 
 export function runCli(argv = process.argv): void {
   const cli = cac('airules')
@@ -392,7 +393,7 @@ export function runCli(argv = process.argv): void {
     })
 
   cli.help()
-  cli.version('0.0.0')
+  cli.version(AIRULES_VERSION)
   cli.parse(argv)
 }
 

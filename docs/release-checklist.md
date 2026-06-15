@@ -14,14 +14,14 @@ pnpm check
 ## Pack validation
 
 ```bash
-node packages/cli/dist/bin.js pack-validate ./packs/react-shadcn
-node packages/cli/dist/bin.js pack-build ./packs/react-shadcn --out dist/airules/react-shadcn
+node packages/cli/dist/bin.js pack validate ./packs/react-shadcn
+node packages/cli/dist/bin.js pack build ./packs/react-shadcn --out dist/airules/react-shadcn
 ```
 
 ## Registry validation
 
 ```bash
-node packages/cli/dist/bin.js registries --registry ./registry.json
+node packages/cli/dist/bin.js registry list --registry ./registry.json
 node packages/cli/dist/bin.js search shadcn --registry ./registry.json
 ```
 
@@ -43,15 +43,33 @@ node ../../packages/cli/dist/bin.js remove @baicie/react-shadcn --dry-run
 ```txt
 AGENTS.md
 .cursor/rules/shadcn.mdc
-.github/copilot-instructions.md
 .agents/skills/shadcn-page/SKILL.md
 .agents/agent/airules.config.ts
 .agents/agent/airules.lock.json
 ```
 
-## Publish beta
+## Release with @baicie/release
+
+Prepare a beta release:
 
 ```bash
-pnpm build
-pnpm --filter @baicie/airules publish --tag beta --access public
+pnpm release 0.1.0-beta.0 --publish --yes
+```
+
+Prepare a stable release:
+
+```bash
+pnpm release 0.1.0 --publish --yes
+```
+
+Publish-only is for CI tag publishing:
+
+```bash
+pnpm release:publish 0.1.0-beta.0
+```
+
+## Required GitHub secret
+
+```txt
+NPM_TOKEN
 ```

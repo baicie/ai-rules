@@ -42,15 +42,15 @@ airules prune
 airules list
 
 airules search [query]
-airules registries
-airules registry-publish <pack>
+airules registry list
+airules registry publish <pack>
 
-airules pack-validate <pack>
-airules pack-build <pack>
+airules pack validate <pack>
+airules pack build <pack>
 
-airules create-pack <name>
-airules create-skill <name>
-airules create-registry
+airules create pack <name>
+airules create skill <name>
+airules create registry
 ```
 
 ## Source formats
@@ -76,3 +76,14 @@ shadcn
 │   └── state.json
 └── skills/
 ```
+
+## Release
+
+This repository uses `@baicie/release`.
+
+```bash
+pnpm release:precheck
+pnpm release 0.1.0-beta.0 --publish --yes
+```
+
+Tag publishing is handled by GitHub Actions.

@@ -3,6 +3,18 @@
   "type": "module",
   "version": "0.0.0",
   "private": false,
+  "description": "Core installer, source resolver, registry, lockfile, and pack tooling for airules.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/baicie/ai-rules",
+    "directory": "packages/core"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

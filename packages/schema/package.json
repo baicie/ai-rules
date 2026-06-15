@@ -3,6 +3,18 @@
   "type": "module",
   "version": "0.0.0",
   "private": false,
+  "description": "Zod schemas and TypeScript types for airules packs, configs, registries, and lockfiles.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/baicie/ai-rules",
+    "directory": "packages/schema"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

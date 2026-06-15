@@ -3,6 +3,18 @@
   "type": "module",
   "version": "0.0.0",
   "private": false,
+  "description": "CLI for installing and managing reusable AI coding rule packs.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/baicie/ai-rules",
+    "directory": "packages/cli"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
