@@ -1,7 +1,7 @@
 {
   "name": "@baicie/airules-schema",
   "type": "module",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "description": "Zod schemas and TypeScript types for airules packs, configs, registries, and lockfiles.",
   "license": "MIT",
   "repository": {

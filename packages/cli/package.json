@@ -1,7 +1,7 @@
 {
   "name": "@baicie/airules",
   "type": "module",
-  "version": "0.0.1-beta.2",
+  "version": "0.0.1-beta.3",
   "description": "CLI for installing and managing reusable AI coding rule packs.",
   "license": "MIT",
   "repository": {
