@@ -86,46 +86,102 @@ export async function resolveGitHubPackSource(
     )
   }
 
-  const cacheRoot = getGitHubPackCacheRoot(cwd, {
+  if (parsed.path.length > 0) {
+    const cacheRoot = getGitHubPackCacheRoot(cwd, {
+      owner: parsed.owner,
+      repo: parsed.repo,
+      commit: commit.sha,
+      path: parsed.path,
+    })
+
+    await downloadGitHubSubTreeToCache({
+      parsed,
+      ref,
+      treeSha,
+      cacheRoot,
+      subPaths: [parsed.path],
+      stripPrefix: true,
+    })
+
+    return {
+      source,
+      root: cacheRoot,
+      resolved: {
+        type: 'github',
+        owner: parsed.owner,
+        repo: parsed.repo,
+        path: parsed.path,
+        ref,
+        commit: commit.sha,
+      },
+    }
+  }
+
+  const metadataCacheRoot = getGitHubPackCacheRoot(cwd, {
     owner: parsed.owner,
     repo: parsed.repo,
     commit: commit.sha,
-    path: parsed.path,
+    path: '',
   })
 
-  await downloadGitHubPackToCache({
+  await downloadGitHubSubTreeToCache({
     parsed,
     ref,
     treeSha,
-    cacheRoot,
+    cacheRoot: metadataCacheRoot,
+    subPaths: ['', 'packs'],
+    entryFilter: isRepositoryMetadataEntry,
   })
 
-  const discovered =
-    parsed.path.length === 0
-      ? discoverGitHubRepositoryPackRoot({
-          cacheRoot,
-          parsed,
-          ref,
-          source,
-        })
-      : {
-          root: cacheRoot,
-          path: parsed.path,
-        }
+  const discovery = discoverGitHubRepositoryPackRoot({
+    cacheRoot: metadataCacheRoot,
+    parsed,
+    ref,
+    source,
+  })
 
-  const resolved: ResolvedGitHubPackSource['resolved'] = {
-    type: 'github',
+  if (discovery.path === '') {
+    return {
+      source,
+      root: metadataCacheRoot,
+      resolved: {
+        type: 'github',
+        owner: parsed.owner,
+        repo: parsed.repo,
+        path: '',
+        ref,
+        commit: commit.sha,
+      },
+    }
+  }
+
+  const packCacheRoot = getGitHubPackCacheRoot(cwd, {
     owner: parsed.owner,
     repo: parsed.repo,
-    path: discovered.path,
-    ref,
     commit: commit.sha,
-  }
+    path: discovery.path,
+  })
+
+  await downloadGitHubSubTreeToCache({
+    parsed,
+    ref,
+    treeSha,
+    cacheRoot: packCacheRoot,
+    subPaths: [discovery.path],
+    stripPrefix: true,
+  })
 
   return {
     source,
-    root: discovered.root,
-    resolved,
+    root: packCacheRoot,
+    resolved: {
+      type: 'github',
+      owner: parsed.owner,
+      repo: parsed.repo,
+      path: discovery.path,
+      ref,
+      commit: commit.sha,
+    },
   }
 }
 
@@ -464,12 +520,25 @@ async function fetchGitHubCommit(
   )
 }
 
-async function downloadGitHubPackToCache(options: {
+async function downloadGitHubSubTreeToCache(options: {
   parsed: ParsedGitHubSource
   ref: string
   treeSha: string
   cacheRoot: string
+  subPaths: string[]
+  stripPrefix?: boolean
+  entryFilter?: (entryPath: string) => boolean
 }): Promise<void> {
+  const commitMarker = join(options.cacheRoot, '.commit')
+
+  if (
+    existsSync(options.cacheRoot) &&
+    existsSync(commitMarker) &&
+    readFileSync(commitMarker, 'utf8').trim() === commitMarkerKey(options)
+  ) {
+    return
+  }
+
   const tree = await fetchGitHubJson<GitHubTreeResponse>(
     `https://api.github.com/repos/${encodeURIComponent(options.parsed.owner)}/${encodeURIComponent(options.parsed.repo)}/git/trees/${encodeURIComponent(options.treeSha)}?recursive=1`,
   )
@@ -481,18 +550,43 @@ async function downloadGitHubPackToCache(options: {
   }
 
   const entries = tree.tree !== undefined ? tree.tree : []
-  const packPath = normalizeGitHubPath(options.parsed.path)
+  const subPaths = options.subPaths.map(subPath => normalizeGitHubPath(subPath))
+  const filter = options.entryFilter
   const fileEntries: GitHubTreeEntry[] = []
 
   for (const entry of entries) {
-    if (entry.type === 'blob' && isInsidePackPath(entry.path, packPath)) {
-      fileEntries.push(entry)
+    if (entry.type !== 'blob' || !entry.path) {
+      continue
     }
+
+    if (!isInsideAnySubPath(entry.path, subPaths)) {
+      continue
+    }
+
+    if (filter !== undefined && !filter(entry.path)) {
+      continue
+    }
+
+    fileEntries.push(entry)
   }
 
   if (fileEntries.length === 0) {
+    if (options.entryFilter !== undefined) {
+      if (existsSync(options.cacheRoot)) {
+        rmSync(options.cacheRoot, {
+          recursive: true,
+          force: true,
+        })
+      }
+
+      mkdirSync(options.cacheRoot, {
+        recursive: true,
+      })
+      return
+    }
+
     throw new Error(
-      `Cannot find files under "${packPath || '.'}" in ${options.parsed.owner}/${options.parsed.repo}@${options.ref}.`,
+      `Cannot find files under "${subPaths.join(', ') || '.'}" in ${options.parsed.owner}/${options.parsed.repo}@${options.ref}.`,
     )
   }
 
@@ -507,12 +601,16 @@ async function downloadGitHubPackToCache(options: {
     recursive: true,
   })
 
+  const stripPrefix = options.stripPrefix === true
+
   for (const entry of fileEntries) {
     if (!entry.sha || !entry.path) {
       continue
     }
 
-    const relativePath = stripPackPath(entry.path, packPath)
+    const relativePath = stripPrefix
+      ? stripAnySubPath(entry.path, subPaths)
+      : entry.path
 
     if (!relativePath) {
       throw new Error(
@@ -540,6 +638,85 @@ async function downloadGitHubPackToCache(options: {
     })
     writeFileSync(targetPath, content)
   }
+
+  writeFileSync(commitMarker, commitMarkerKey(options))
+}
+
+function commitMarkerKey(options: {
+  parsed: ParsedGitHubSource
+  ref: string
+  treeSha: string
+  subPaths: string[]
+  stripPrefix?: boolean
+  entryFilter?: (entryPath: string) => boolean
+}): string {
+  return [
+    options.parsed.owner,
+    options.parsed.repo,
+    options.ref,
+    options.treeSha,
+    options.subPaths.join('|'),
+    options.stripPrefix ? 'strip' : 'keep',
+    options.entryFilter?.name ?? 'no-filter',
+  ].join('\n')
+}
+
+function isInsideAnySubPath(entryPath: string, subPaths: string[]): boolean {
+  for (const subPath of subPaths) {
+    if (isInsidePackPath(entryPath, subPath)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function stripAnySubPath(entryPath: string, subPaths: string[]): string {
+  for (const subPath of subPaths) {
+    const stripped = stripPackPath(entryPath, subPath)
+    if (stripped !== null) {
+      return stripped
+    }
+  }
+
+  return entryPath
+}
+
+function stripPackPath(entryPath: string, packPath: string): string | null {
+  if (!packPath) {
+    return null
+  }
+
+  if (entryPath === packPath) {
+    return ''
+  }
+
+  if (entryPath.startsWith(`${packPath}/`)) {
+    return entryPath.slice(packPath.length + 1)
+  }
+
+  return null
+}
+
+function isRepositoryMetadataEntry(entryPath: string): boolean {
+  if (entryPath === 'airules.pack.json' || entryPath === 'registry.json') {
+    return true
+  }
+
+  if (
+    entryPath.startsWith('packs/') &&
+    entryPath.endsWith('/airules.pack.json')
+  ) {
+    const rest = entryPath.slice('packs/'.length)
+    if (rest.includes('/')) {
+      const parts = rest.split('/')
+      return parts.length === 2 && parts[0] !== undefined && parts[0].length > 0
+    }
+
+    return false
+  }
+
+  return false
 }
 
 async function fetchGitHubJson<T>(url: string): Promise<T> {
@@ -613,20 +790,6 @@ function isInsidePackPath(
     normalizedEntryPath === packPath ||
     normalizedEntryPath.startsWith(`${packPath}/`)
   )
-}
-
-function stripPackPath(entryPath: string, packPath: string): string {
-  const normalizedEntryPath = normalizeGitHubPath(entryPath)
-
-  if (!packPath) {
-    return normalizedEntryPath
-  }
-
-  if (normalizedEntryPath === packPath) {
-    return ''
-  }
-
-  return normalizedEntryPath.slice(packPath.length + 1)
 }
 
 function sanitizePathSegment(value: string): string {

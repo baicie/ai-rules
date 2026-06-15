@@ -146,9 +146,73 @@ describe('resolveGitHubPackSource', () => {
 
         expect(existsSync(join(resolved.root, 'airules.pack.json'))).toBe(true)
         expect(existsSync(join(resolved.root, 'modules/core.md'))).toBe(true)
-        expect(resolved.root).toMatch(/[\\/]packs[\\/]react-shadcn$/)
+
+        const explicitCacheRoot = getGitHubPackCacheRoot(cwd, {
+          owner: 'baicie',
+          repo: 'ai-rules',
+          commit: 'commit-sha-123',
+          path: 'packs/react-shadcn',
+        })
+        expect(resolved.root).toBe(explicitCacheRoot)
       },
     )
+  })
+
+  it('shares the same cache root for shorthand and explicit pack path', async () => {
+    const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
+
+    const fetchMock = createRepoRootMockFetch()
+    const fetchSpy = vi.fn(fetchMock)
+    vi.stubGlobal('fetch', fetchSpy)
+    fetchSpy.mockImplementation(fetchMock)
+
+    const shorthand = await resolveGitHubPackSource(
+      'github:baicie/ai-rules#main',
+      cwd,
+    )
+
+    fetchSpy.mockClear()
+    const explicit = await resolveGitHubPackSource(
+      'github:baicie/ai-rules/packs/react-shadcn#main',
+      cwd,
+    )
+
+    expect(shorthand.root).toBe(explicit.root)
+
+    const calledUrls = fetchSpy.mock.calls.map(call => String(call[0]))
+    expect(calledUrls.some(url => url.includes('/git/trees/'))).toBe(false)
+    expect(calledUrls.some(url => url.includes('/git/blobs/'))).toBe(false)
+  })
+
+  it('only fetches metadata blobs when discovering the default pack', async () => {
+    const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
+
+    const baseMock = createRepoRootMockFetch()
+    const fetchedBlobs: string[] = []
+    vi.stubGlobal('fetch', (async (
+      input: string | URL | Request,
+      init?: RequestInit,
+    ) => {
+      const url = String(input)
+      const match = url.match(/\/git\/blobs\/([^?]+)$/)
+      if (match) {
+        fetchedBlobs.push(match[1] ?? '')
+      }
+      return baseMock(input, init) as Promise<Response>
+    }) as typeof fetch)
+
+    await resolveGitHubPackSource('github:baicie/ai-rules#main', cwd)
+
+    expect(fetchedBlobs).toEqual(
+      expect.arrayContaining(['blob-registry', 'blob-pack', 'blob-ts-pack']),
+    )
+    expect(fetchedBlobs).toContain('blob-core')
+
+    const registryIndex = fetchedBlobs.indexOf('blob-registry')
+    const coreIndex = fetchedBlobs.indexOf('blob-core')
+    expect(registryIndex).toBeLessThan(coreIndex)
   })
 
   it('throws for repository root with multiple registry packs and no defaultPack', async () => {
