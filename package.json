@@ -25,7 +25,7 @@
     "release:precheck": "node scripts/release.mjs precheck --strict",
     "release:readiness": "node scripts/release.mjs readiness --allow-zero",
     "release:plan": "node scripts/release.mjs plan",
-    "release:publish": "node scripts/release.mjs publish --yes",
+    "release:publish": "node scripts/release.mjs publish",
     "release:version": "node scripts/release.mjs version",
     "preinstall": "npx only-allow pnpm",
     "postinstall": "simple-git-hooks",

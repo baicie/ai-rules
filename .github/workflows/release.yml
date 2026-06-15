@@ -46,7 +46,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm release:publish ${{ steps.version.outputs.version }}
+        run: pnpm release:publish
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
