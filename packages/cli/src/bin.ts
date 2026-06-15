@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
@@ -405,12 +406,21 @@ export function runCli(argv = process.argv): void {
   cli.parse(argv)
 }
 
-function isCliEntry(metaUrl: string, argv1: string | undefined): boolean {
-  if (!argv1) {
+export function isCliEntry(
+  metaUrl: string | undefined,
+  argv1: string | undefined,
+): boolean {
+  if (!metaUrl || !argv1) {
     return false
   }
 
-  return fileURLToPath(metaUrl) === resolve(argv1)
+  try {
+    const entryPath = realpathSync(resolve(argv1))
+    const modulePath = realpathSync(fileURLToPath(metaUrl))
+    return entryPath === modulePath
+  } catch {
+    return false
+  }
 }
 
 if (isCliEntry(import.meta.url, process.argv[1])) {
