@@ -1,8 +1,7 @@
 {
   "name": "@baicie/airules-schema",
   "type": "module",
-  "version": "0.0.0",
-  "private": false,
+  "version": "0.0.1-beta.0",
   "description": "Zod schemas and TypeScript types for airules packs, configs, registries, and lockfiles.",
   "license": "MIT",
   "repository": {
@@ -22,9 +21,6 @@
       "require": "./dist/index.cjs"
     }
   },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
@@ -40,5 +36,9 @@
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8"
-  }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "private": false,
+  "types": "./dist/index.d.ts"
 }
