@@ -23,7 +23,7 @@ function createProject(): string {
   mkdirSync(join(currentTmpDir, 'packs/react-shadcn/templates'), {
     recursive: true,
   })
-  mkdirSync(join(currentTmpDir, 'packs/react-shadcn/files/.cursor/rules'), {
+  mkdirSync(join(currentTmpDir, 'packs/react-shadcn/files/docs/ai'), {
     recursive: true,
   })
   mkdirSync(join(currentTmpDir, 'packs/react-shadcn/skills/shadcn-page'), {
@@ -38,7 +38,7 @@ function createProject(): string {
         version: '0.1.0',
         profiles: {
           default: {
-            installs: ['codex', 'cursor', 'skill'],
+            installs: ['codex', 'docs', 'skill'],
             variables: {
               packageManager: 'pnpm',
               requireTests: true,
@@ -60,11 +60,11 @@ function createProject(): string {
             merge: 'managed-block',
           },
           {
-            id: 'cursor',
-            agent: 'cursor',
-            target: '.cursor/rules/shadcn.mdc',
+            id: 'docs',
+            agent: 'generic',
+            target: 'docs/ai/shadcn.md',
             mode: 'file',
-            from: 'files/.cursor/rules/shadcn.mdc',
+            from: 'files/docs/ai/shadcn.md',
             merge: 'overwrite-managed',
           },
           {
@@ -106,8 +106,8 @@ function createProject(): string {
   )
 
   writeFileSync(
-    join(currentTmpDir, 'packs/react-shadcn/files/.cursor/rules/shadcn.mdc'),
-    '---\ndescription: shadcn rules\n---\n\n# Cursor shadcn\n',
+    join(currentTmpDir, 'packs/react-shadcn/files/docs/ai/shadcn.md'),
+    '# Docs shadcn\n',
   )
 
   writeFileSync(
@@ -139,7 +139,7 @@ describe('phase3 installer', () => {
 
     expect(result.operations.map(operation => operation.target)).toEqual([
       'AGENTS.md',
-      '.cursor/rules/shadcn.mdc',
+      'docs/ai/shadcn.md',
       '.agents/skills/shadcn-page/SKILL.md',
     ])
 
@@ -150,10 +150,9 @@ describe('phase3 installer', () => {
     expect(agents).toContain('## Testing')
     expect(agents).toContain('<!-- airules:start')
 
-    const cursor = readFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'utf8')
-    expect(cursor.startsWith('---')).toBe(true)
-    expect(cursor).toContain('# Cursor shadcn')
-    expect(cursor).not.toContain('airules:managed')
+    const docs = readFileSync(join(cwd, 'docs/ai/shadcn.md'), 'utf8')
+    expect(docs).toContain('# Docs shadcn')
+    expect(docs).not.toContain('airules:managed')
 
     const skill = readFileSync(
       join(cwd, '.agents/skills/shadcn-page/SKILL.md'),
@@ -186,17 +185,17 @@ describe('phase3 installer', () => {
   it('refuses to overwrite unmanaged file for overwrite-managed', () => {
     const cwd = createProject()
 
-    mkdirSync(join(cwd, '.cursor/rules'), {
+    mkdirSync(join(cwd, 'docs/ai'), {
       recursive: true,
     })
 
-    writeFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'user content')
+    writeFileSync(join(cwd, 'docs/ai/shadcn.md'), 'user content')
 
     expect(() =>
       installLocalPack({
         cwd,
         source: './packs/react-shadcn',
-        agents: ['cursor'],
+        agents: ['generic'],
       }),
     ).toThrow(/Refusing to overwrite unmanaged file/)
   })
@@ -207,24 +206,24 @@ describe('phase3 installer', () => {
     installLocalPack({
       cwd,
       source: './packs/react-shadcn',
-      agents: ['cursor'],
+      agents: ['generic'],
     })
 
     writeFileSync(
-      join(cwd, 'packs/react-shadcn/files/.cursor/rules/shadcn.mdc'),
-      '---\ndescription: updated\n---\n\n# Updated\n',
+      join(cwd, 'packs/react-shadcn/files/docs/ai/shadcn.md'),
+      '# Updated\n',
     )
 
     const result = installLocalPack({
       cwd,
       source: './packs/react-shadcn',
-      agents: ['cursor'],
+      agents: ['generic'],
     })
 
     expect(result.operations[0] && result.operations[0].action).toBe('update')
 
-    const cursor = readFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'utf8')
-    expect(cursor).toContain('# Updated')
+    const docs = readFileSync(join(cwd, 'docs/ai/shadcn.md'), 'utf8')
+    expect(docs).toContain('# Updated')
   })
 
   it('supports manual merge by staging generated content', () => {
@@ -243,16 +242,16 @@ describe('phase3 installer', () => {
     const result = installLocalPack({
       cwd,
       source: './packs/react-shadcn',
-      agents: ['cursor'],
+      agents: ['generic'],
     })
 
     expect(result.operations[0] && result.operations[0].action).toBe('stage')
-    expect(existsSync(join(cwd, '.cursor/rules/shadcn.mdc'))).toBe(false)
+    expect(existsSync(join(cwd, 'docs/ai/shadcn.md'))).toBe(false)
     expect(
       existsSync(
         join(
           cwd,
-          '.agents/agent/staged/_baicie_react-shadcn/cursor/.cursor/rules/shadcn.mdc',
+          '.agents/agent/staged/_baicie_react-shadcn/docs/docs/ai/shadcn.md',
         ),
       ),
     ).toBe(true)

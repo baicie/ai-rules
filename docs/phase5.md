@@ -7,7 +7,7 @@ Phase 5 adds registry and named pack alias support.
 Before Phase 5:
 
 ```bash
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0
 ```
 
 After Phase 5:
@@ -71,7 +71,7 @@ Direct sources are installed as-is:
 ```txt
 ./packs/react-shadcn
 local:./packs/react-shadcn
-github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+baicie/ai-rules/packs/react-shadcn#v0.1.0
 ```
 
 Named sources are resolved from registries:
@@ -95,7 +95,7 @@ airules add shadcn
 If `shadcn` resolves to:
 
 ```txt
-github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+baicie/ai-rules/packs/react-shadcn#v0.1.0
 ```
 
 Then `security.requirePinnedVersion` and `security.trustedSources` are checked against that GitHub source.

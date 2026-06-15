@@ -19,10 +19,12 @@ Important files:
 ```txt
 .agents/agent/airules.config.ts
 .agents/agent/airules.lock.json
-.agents/agent/cache
 .agents/agent/staged
-.agents/agent/state.json
 ```
+
+Remote pack cache is not project-local. It is shared across projects under
+`~/.cache/airules/packs` by default, or under `AIRULES_CACHE_DIR` when that
+environment variable is set.
 
 ## Config lookup order
 

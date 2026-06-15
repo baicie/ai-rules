@@ -2,10 +2,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {
   AIRULES_AGENT_DIR,
-  AIRULES_CACHE_DIRNAME,
   AIRULES_LOCK_FILENAME,
   AIRULES_STAGED_DIRNAME,
-  AIRULES_STATE_FILENAME,
 } from '@baicie/airules-core'
 
 export interface InitCommandOptions {
@@ -17,14 +15,9 @@ export async function runInitCommand(
   options: InitCommandOptions,
 ): Promise<void> {
   const agentDir = join(options.cwd, AIRULES_AGENT_DIR)
-  const cacheDir = join(agentDir, AIRULES_CACHE_DIRNAME)
   const stagedDir = join(agentDir, AIRULES_STAGED_DIRNAME)
 
   mkdirSync(agentDir, {
-    recursive: true,
-  })
-
-  mkdirSync(cacheDir, {
     recursive: true,
   })
 
@@ -41,19 +34,6 @@ export async function runInitCommand(
   writeFileIfAllowed(
     join(agentDir, AIRULES_LOCK_FILENAME),
     createEmptyLockfile(),
-    options.force,
-  )
-
-  writeFileIfAllowed(
-    join(agentDir, AIRULES_STATE_FILENAME),
-    JSON.stringify(
-      {
-        version: 1,
-        initializedAt: new Date().toISOString(),
-      },
-      null,
-      2,
-    ).concat('\n'),
     options.force,
   )
 

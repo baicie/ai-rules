@@ -6,6 +6,7 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { isGitHubSource, resolveGitHubPackSource } from './github-source'
 import { isNpmSource, resolveNpmPackSource } from './npm-source'
+import { normalizePackSourceInput } from './source-spec'
 
 export interface ResolvedPackSource {
   source: string
@@ -26,15 +27,17 @@ export async function resolvePackSource(
   source: string,
   cwd = process.cwd(),
 ): Promise<ResolvedAnyPackSource> {
-  if (isGitHubSource(source)) {
-    return resolveGitHubPackSource(source, cwd)
+  const normalizedSource = normalizePackSourceInput(source)
+
+  if (isGitHubSource(normalizedSource)) {
+    return resolveGitHubPackSource(normalizedSource, cwd)
   }
 
-  if (isNpmSource(source)) {
-    return resolveNpmPackSource(source, cwd)
+  if (isNpmSource(normalizedSource)) {
+    return resolveNpmPackSource(normalizedSource, cwd)
   }
 
-  return resolveLocalPackSource(source, cwd)
+  return resolveLocalPackSource(normalizedSource, cwd)
 }
 
 export function resolveLocalPackSource(

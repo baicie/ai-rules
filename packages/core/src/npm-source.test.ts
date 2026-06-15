@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import * as tar from 'tar'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { AIRULES_CACHE_ENV } from './cache-path'
 import {
   getNpmPackCacheRoot,
   parseNpmSource,
@@ -25,6 +26,7 @@ function createTempProject(): string {
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 
   if (currentTmpDir) {
@@ -61,6 +63,7 @@ describe('parseNpmSource', () => {
 describe('resolveNpmPackSource', () => {
   it('downloads npm tarball into cache', async () => {
     const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
     const tarball = await createPackTarball()
 
     vi.stubGlobal('fetch', createMockFetch(tarball))
@@ -78,21 +81,25 @@ describe('resolveNpmPackSource', () => {
 
     expect(existsSync(join(resolved.root, 'airules.pack.json'))).toBe(true)
     expect(existsSync(join(resolved.root, 'modules/core.md'))).toBe(true)
+    expect(resolved.root).toContain(join(cwd, 'global-cache', 'packs'))
   })
 
   it('creates deterministic cache root', () => {
+    vi.stubEnv(AIRULES_CACHE_ENV, '/airules-cache')
+
     const cacheRoot = getNpmPackCacheRoot('/repo', {
       packageName: '@baicie/airules-react-shadcn',
       version: '0.1.0',
     })
 
     expect(cacheRoot).toMatch(
-      /[\\/]repo[\\/]\.agents[\\/]agent[\\/]cache[\\/]npm[\\/]_baicie_airules-react-shadcn[\\/]0\.1\.0$/,
+      /[\\/]airules-cache[\\/]packs[\\/]npm[\\/]_baicie_airules-react-shadcn[\\/]0\.1\.0$/,
     )
   })
 
   it('throws when npm package does not contain airules.pack.json at package root', async () => {
     const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
     const tarball = await createInvalidPackTarball()
 
     vi.stubGlobal('fetch', createMockFetch(tarball))

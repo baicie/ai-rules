@@ -12,7 +12,7 @@ function createRoot(): string {
   mkdirSync(join(currentTmpDir, 'modules'), { recursive: true })
   mkdirSync(join(currentTmpDir, 'blocks'), { recursive: true })
   mkdirSync(join(currentTmpDir, 'templates'), { recursive: true })
-  mkdirSync(join(currentTmpDir, 'files/.cursor/rules'), { recursive: true })
+  mkdirSync(join(currentTmpDir, 'files/docs/ai'), { recursive: true })
   mkdirSync(join(currentTmpDir, 'skills/shadcn-page'), { recursive: true })
   return currentTmpDir
 }
@@ -102,18 +102,18 @@ describe('renderInstall', () => {
 
   it('renders file install', () => {
     const root = createRoot()
-    writeFileSync(join(root, 'files/.cursor/rules/shadcn.mdc'), '---\n---\n')
+    writeFileSync(join(root, 'files/docs/ai/shadcn.md'), '# shadcn\n')
 
     const pack: AirulesPack = {
       name: '@baicie/test',
       version: '0.1.0',
       installs: [
         {
-          id: 'cursor',
-          agent: 'cursor',
-          target: '.cursor/rules/shadcn.mdc',
+          id: 'docs',
+          agent: 'generic',
+          target: 'docs/ai/shadcn.md',
           mode: 'file',
-          from: 'files/.cursor/rules/shadcn.mdc',
+          from: 'files/docs/ai/shadcn.md',
         },
       ],
     }
@@ -125,9 +125,9 @@ describe('renderInstall', () => {
     })
 
     expect(rendered.files[0] && rendered.files[0].target).toBe(
-      '.cursor/rules/shadcn.mdc',
+      'docs/ai/shadcn.md',
     )
-    expect(rendered.files[0] && rendered.files[0].content).toBe('---\n---\n')
+    expect(rendered.files[0] && rendered.files[0].content).toBe('# shadcn\n')
   })
 
   it('renders directory install', () => {

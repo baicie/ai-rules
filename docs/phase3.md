@@ -73,7 +73,7 @@ Wraps content in:
 
 ### overwrite-managed
 
-Used for Cursor rules, Copilot files, and Skill directories.
+Used for Copilot files, generated docs, and Skill directories.
 
 The target file content is not modified with a managed marker. Instead, the lockfile records per-file hashes.
 
@@ -97,7 +97,7 @@ Phase 3 adds:
 {
   "files": [
     {
-      "target": ".cursor/rules/shadcn.mdc",
+      "target": "docs/ai/shadcn.md",
       "contentHash": "sha256-..."
     }
   ]

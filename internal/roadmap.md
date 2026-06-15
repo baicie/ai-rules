@@ -1,5 +1,7 @@
 可以，最终我建议你把它设计成一个 **AI Rules Pack Manager**：
 
+> 当前实现决策：远程 pack 缓存使用跨项目全局目录；`.agents/agent/state.json` 已废弃，持久安装状态统一进入 `airules.lock.json`；Cursor Rules 目标先暂停；`init` 不再自动安装 airules Skill，后续如需要可由显式命令安装。
+
 > **ai-rules 负责维护规则包；airules CLI 负责把模块、block、skill 安装到目标仓库；`.agents/agent` 负责保存配置、锁文件、缓存和安装状态。**
 
 它的定位类似：
@@ -34,8 +36,8 @@ airules CLI
 ```bash
 pnpm dlx @baicie/airules init
 
-pnpm dlx @baicie/airules add github:baicie/ai-rules/packs/react-shadcn \
-  --agent codex,cursor,copilot \
+pnpm dlx @baicie/airules add baicie/ai-rules/packs/react-shadcn#v0.1.0 \
+  --agent codex,copilot,skill \
   --profile strict
 ```
 
@@ -44,7 +46,6 @@ pnpm dlx @baicie/airules add github:baicie/ai-rules/packs/react-shadcn \
 ```txt
 AGENTS.md
 CLAUDE.md
-.cursor/rules/*.mdc
 .github/copilot-instructions.md
 .agents/skills/*
 docs/ai/*
@@ -67,12 +68,9 @@ docs/ai/*
 ├── agent/
 │   ├── airules.config.ts
 │   ├── airules.lock.json
-│   ├── cache/
-│   ├── staged/
-│   └── state.json
+│   └── staged/
 └── skills/
-    └── airules/
-        └── SKILL.md
+    └── *
 ```
 
 其中：
@@ -84,14 +82,14 @@ docs/ai/*
 .agents/agent/airules.lock.json
   锁文件，记录来源、版本、commit、hash、已写入文件。
 
-.agents/agent/cache
-  缓存远程 pack。
+远程 pack cache
+  使用跨项目全局目录，默认在系统 cache 目录下；可通过 AIRULES_CACHE_DIR 覆盖。
 
 .agents/agent/staged
   冲突时暂存生成结果。
 
-.agents/agent/state.json
-  本地状态，例如上次 doctor 结果、安装时间等。
+state.json
+  已废弃；需要持久化的安装状态进入 airules.lock.json。
 ```
 
 ---
@@ -356,11 +354,11 @@ review 规范
 
 ```json
 {
-  "id": "cursor-shadcn",
-  "agent": "cursor",
-  "target": ".cursor/rules/shadcn.mdc",
+  "id": "docs-shadcn",
+  "agent": "generic",
+  "target": "docs/ai/shadcn.md",
   "mode": "file",
-  "from": "files/.cursor/rules/shadcn.mdc",
+  "from": "files/docs/ai/shadcn.md",
   "merge": "overwrite-managed"
 }
 ```
@@ -368,7 +366,6 @@ review 规范
 适合：
 
 ```txt
-.cursor/rules/*.mdc
 .github/copilot-instructions.md
 docs/ai/*.md
 某些固定模板文件
@@ -399,7 +396,6 @@ docs/ai/*.md
       "installs": [
         "codex-agents",
         "claude-main",
-        "cursor-shadcn",
         "copilot-main",
         "skill-shadcn-page",
         "docs-shadcn"
@@ -423,7 +419,7 @@ docs/ai/*.md
     },
     "minimal": {
       "description": "Only install core and shadcn rules",
-      "installs": ["codex-agents-minimal", "cursor-shadcn"]
+      "installs": ["codex-agents-minimal", "docs-shadcn"]
     }
   },
 
@@ -480,11 +476,11 @@ docs/ai/*.md
       "merge": "managed-block"
     },
     {
-      "id": "cursor-shadcn",
-      "agent": "cursor",
-      "target": ".cursor/rules/shadcn.mdc",
+      "id": "docs-shadcn",
+      "agent": "generic",
+      "target": "docs/ai/shadcn.md",
       "mode": "template",
-      "template": "templates/cursor.mdc.hbs",
+      "template": "templates/docs-shadcn.md.hbs",
       "blocks": ["shadcn"],
       "merge": "overwrite-managed"
     },
@@ -663,9 +659,9 @@ export default defineAirulesConfig({
     },
     {
       "pack": "@baicie/react-shadcn",
-      "installId": "cursor-shadcn",
-      "agent": "cursor",
-      "target": ".cursor/rules/shadcn.mdc",
+      "installId": "docs-shadcn",
+      "agent": "generic",
+      "target": "docs/ai/shadcn.md",
       "mode": "template",
       "merge": "overwrite-managed",
       "contentHash": "sha256-contenthash"
@@ -726,12 +722,12 @@ replace-file
 
 ## `overwrite-managed`
 
-适合 `.cursor/rules/*.mdc` / `docs/ai/*.md`。
+适合生成的 `docs/ai/*.md` 或其他完整托管文件。
 
 文件头：
 
 ```md
-<!-- airules:managed pack="@baicie/react-shadcn" install="cursor-shadcn" version="0.1.0" hash="sha256-xxx" -->
+<!-- airules:managed pack="@baicie/react-shadcn" install="docs-shadcn" version="0.1.0" hash="sha256-xxx" -->
 ```
 
 只有文件带这个标记时才整体覆盖。
@@ -765,26 +761,27 @@ airules init
 ```txt
 .agents/agent/airules.config.ts
 .agents/agent/airules.lock.json
-.agents/skills/airules/SKILL.md
 ```
+
+已废弃：`init` 不自动安装 airules Skill，避免初始化时写入额外运行时能力文件。
 
 ## 安装
 
 ```bash
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0
 ```
 
 指定 agent：
 
 ```bash
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0 \
-  --agent codex,cursor,copilot
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0 \
+  --agent codex,copilot,skill
 ```
 
 指定 profile：
 
 ```bash
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0 \
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0 \
   --profile strict
 ```
 
@@ -819,7 +816,6 @@ airules doctor
 lock 是否一致
 目标文件 managed block 是否被用户改过
 AGENTS.md 是否存在
-Cursor Rules 是否存在
 Skill 是否安装
 引用的 modules / blocks 是否存在
 source 是否可信
@@ -850,11 +846,11 @@ npm
 ```bash
 airules add ./packs/react-shadcn
 
-airules add github:baicie/ai-rules/packs/react-shadcn#main
+airules add baicie/ai-rules/packs/react-shadcn#main
 
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0
 
-airules add npm:@baicie/airules-react-shadcn
+airules add @baicie/airules-react-shadcn@0.1.0
 ```
 
 解析规则：
@@ -1013,9 +1009,6 @@ export type AirulesInstall = {
 your-project/
 ├── AGENTS.md
 ├── CLAUDE.md
-├── .cursor/
-│   └── rules/
-│       └── shadcn.mdc
 ├── .github/
 │   └── copilot-instructions.md
 ├── docs/
@@ -1025,12 +1018,8 @@ your-project/
     ├── agent/
     │   ├── airules.config.ts
     │   ├── airules.lock.json
-    │   ├── cache/
-    │   ├── staged/
-    │   └── state.json
+    │   └── staged/
     └── skills/
-        ├── airules/
-        │   └── SKILL.md
         └── shadcn-page/
             └── SKILL.md
 ```
@@ -1050,7 +1039,7 @@ skills/airules/SKILL.md
 ````md
 ---
 name: airules
-description: Use this skill when managing, installing, updating, reviewing, or authoring AI rule packs for a repository with airules. This includes AGENTS.md, CLAUDE.md, Cursor rules, Copilot instructions, agent skills, and reusable AI coding rules.
+description: Use this skill when managing, installing, updating, reviewing, or authoring AI rule packs for a repository with airules. This includes AGENTS.md, CLAUDE.md, Copilot instructions, agent skills, docs/ai references, and reusable AI coding rules.
 ---
 
 # airules Skill
@@ -1066,7 +1055,7 @@ airules is a rule pack manager for coding agents. It installs reusable rule modu
 Use this skill when the user asks to:
 
 - Create or update AI coding rules.
-- Install rules into AGENTS.md, CLAUDE.md, Cursor Rules, or Copilot Instructions.
+- Install rules into AGENTS.md, CLAUDE.md, Copilot Instructions, docs/ai references, or Skills.
 - Reuse agent rules across repositories.
 - Add shadcn/ui, React, Vue, TypeScript, Java, AIOps, or monorepo coding rules.
 - Design or modify an airules pack.
@@ -1082,9 +1071,7 @@ In the target repository:
 ├── agent/
 │   ├── airules.config.ts
 │   ├── airules.lock.json
-│   ├── cache/
-│   ├── staged/
-│   └── state.json
+│   └── staged/
 └── skills/
     └── <skill-name>/
         └── SKILL.md
@@ -1132,7 +1119,7 @@ An airules pack may contain four install modes:
 3. `file`
 
    - Copy one source file to one target file.
-   - Best for Cursor rules, Copilot instructions, and docs.
+   - Best for Copilot instructions, docs, and other full-file targets.
 
 4. `directory`
 
@@ -1211,7 +1198,7 @@ Supported merge strategies:
 - `overwrite-managed`
 
   - Overwrite the full file only if it is already airules-managed.
-  - Use for Cursor rule files and generated docs.
+  - Use for generated docs and other fully generated files.
 
 - `skip-if-exists`
 
@@ -1238,7 +1225,7 @@ airules diff
 For examples:
 
 ```bash
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0 --profile strict --agent codex,cursor
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0 --profile strict --agent codex,copilot
 airules update
 airules doctor
 ```
@@ -1277,8 +1264,8 @@ The pack should install:
 
 - AGENTS.md for Codex.
 - CLAUDE.md for Claude.
-- `.cursor/rules/shadcn.mdc` for Cursor.
 - `.github/copilot-instructions.md` for Copilot.
+- `docs/ai/shadcn.md` for generated reference docs.
 - `.agents/skills/shadcn-page/SKILL.md` for shadcn page generation.
 
 ## Review checklist
@@ -1389,7 +1376,7 @@ registry.json
 
 你的最终方案可以定义为：
 
-> **airules 是一套面向 Coding Agent 的规则包协议和 CLI。它以 `.agents/agent` 为本地配置与锁文件目录，支持 JSON/JS/TS 配置，支持 Markdown Module 拼接、Block 模板生成、Direct File 安装和 Skill 分发，并通过 managed block 安全地把规则插入 AGENTS.md、CLAUDE.md、Cursor Rules、Copilot Instructions 等 agent 入口。**
+> **airules 是一套面向 Coding Agent 的规则包协议和 CLI。它以 `.agents/agent` 为本地配置与锁文件目录，支持 JSON/JS/TS 配置，支持 Markdown Module 拼接、Block 模板生成、Direct File 安装和 Skill 分发，并通过 managed block 安全地把规则插入 AGENTS.md、CLAUDE.md、Copilot Instructions、docs/ai 等 agent 入口。**
 
 我建议第一版不要贪大，直接做：
 
@@ -1398,8 +1385,8 @@ registry.json
 modules 拼接
 managed-block 插入
 local/github source
-codex/cursor/copilot/claude 四个 agent
-airules Skill 自动安装
+codex/copilot/claude/skill 四类目标
+airules Skill 自动安装已废弃，改为后续显式安装
 ```
 
 这版做完，你自己的 `zeus`、`zeus-ui`、`sql-studio`、`aiops`、`tools` 都可以统一复用规则了。

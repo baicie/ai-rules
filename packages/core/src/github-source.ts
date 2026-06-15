@@ -3,7 +3,7 @@ import { Buffer } from 'node:buffer'
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import process from 'node:process'
-import { getAirulesAgentDir } from './config-loader'
+import { getAirulesPackCacheDir } from './cache-path'
 import { sha256 } from './hash'
 
 export interface ParsedGitHubSource {
@@ -174,13 +174,14 @@ export function getGitHubPackCacheRoot(
     path: string
   },
 ): string {
+  void cwd
+
   const pathHash = sha256(options.path || '.')
     .replace(/^sha256-/, '')
     .slice(0, 16)
 
   return join(
-    getAirulesAgentDir(cwd),
-    'cache',
+    getAirulesPackCacheDir(),
     'github',
     sanitizePathSegment(options.owner),
     sanitizePathSegment(options.repo),

@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { isAbsolute, join, relative, resolve } from 'node:path'
 import process from 'node:process'
 import * as tar from 'tar'
-import { getAirulesAgentDir } from './config-loader'
+import { getAirulesPackCacheDir } from './cache-path'
 
 export interface ParsedNpmSource {
   packageName: string
@@ -130,9 +130,10 @@ export function getNpmPackCacheRoot(
     version: string
   },
 ): string {
+  void cwd
+
   return join(
-    getAirulesAgentDir(cwd),
-    'cache',
+    getAirulesPackCacheDir(),
     'npm',
     sanitizePathSegment(options.packageName),
     sanitizePathSegment(options.version),

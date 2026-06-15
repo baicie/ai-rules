@@ -7,12 +7,7 @@
   "keywords": ["react", "shadcn", "tailwind", "frontend"],
   "profiles": {
     "default": {
-      "installs": [
-        "codex-agents",
-        "cursor-shadcn",
-        "copilot-main",
-        "skill-shadcn-page"
-      ],
+      "installs": ["codex-agents", "copilot-main", "skill-shadcn-page"],
       "variables": {
         "packageManager": "pnpm",
         "uiAlias": "@/components/ui",
@@ -40,14 +35,6 @@
       },
       "concat": ["core", "react", "shadcn", "testing"],
       "merge": "managed-block"
-    },
-    {
-      "id": "cursor-shadcn",
-      "agent": "cursor",
-      "target": ".cursor/rules/shadcn.mdc",
-      "mode": "file",
-      "from": "files/.cursor/rules/shadcn.mdc",
-      "merge": "overwrite-managed"
     },
     {
       "id": "copilot-main",

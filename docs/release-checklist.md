@@ -32,7 +32,7 @@ mkdir -p temp/dogfood
 cd temp/dogfood
 
 node ../../packages/cli/dist/bin.js init --force
-node ../../packages/cli/dist/bin.js add ../../packs/react-shadcn --agent codex,cursor,skill
+node ../../packages/cli/dist/bin.js add ../../packs/react-shadcn --agent codex,copilot,skill
 node ../../packages/cli/dist/bin.js doctor
 node ../../packages/cli/dist/bin.js diff
 node ../../packages/cli/dist/bin.js remove @baicie/react-shadcn --dry-run
@@ -42,7 +42,7 @@ node ../../packages/cli/dist/bin.js remove @baicie/react-shadcn --dry-run
 
 ```txt
 AGENTS.md
-.cursor/rules/shadcn.mdc
+.github/copilot-instructions.md
 .agents/skills/shadcn-page/SKILL.md
 .agents/agent/airules.config.ts
 .agents/agent/airules.lock.json

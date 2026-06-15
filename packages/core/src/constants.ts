@@ -15,5 +15,3 @@ export const AIRULES_LOCK_FILENAME = 'airules.lock.json'
 export const AIRULES_CACHE_DIRNAME = 'cache'
 
 export const AIRULES_STAGED_DIRNAME = 'staged'
-
-export const AIRULES_STATE_FILENAME = 'state.json'

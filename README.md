@@ -6,7 +6,6 @@ AI Rules Pack Manager for coding agents.
 
 - `AGENTS.md`
 - `CLAUDE.md`
-- `.cursor/rules/*.mdc`
 - `.github/copilot-instructions.md`
 - `.agents/skills/*`
 - `docs/ai/*`
@@ -20,13 +19,21 @@ pnpm dlx @baicie/airules init
 ## Add local pack
 
 ```bash
-pnpm dlx @baicie/airules add ./packs/react-shadcn --agent codex,cursor,skill
+pnpm dlx @baicie/airules add ./packs/react-shadcn --agent codex,copilot,skill
 ```
 
 ## Add registry alias
 
 ```bash
-pnpm dlx @baicie/airules add shadcn --agent codex,cursor
+pnpm dlx @baicie/airules add shadcn --agent codex,copilot
+```
+
+## Add remote pack
+
+```bash
+pnpm dlx @baicie/airules add baicie/ai-rules/packs/react-shadcn#v0.1.0
+pnpm dlx @baicie/airules add https://github.com/baicie/ai-rules/tree/v0.1.0/packs/react-shadcn
+pnpm dlx @baicie/airules add @baicie/airules-react-shadcn@0.1.0
 ```
 
 ## Commands
@@ -58,11 +65,15 @@ airules create registry
 ```txt
 ./packs/react-shadcn
 local:./packs/react-shadcn
-github:baicie/ai-rules/packs/react-shadcn#v0.1.0
-npm:@baicie/airules-react-shadcn@0.1.0
+baicie/ai-rules/packs/react-shadcn#v0.1.0
+https://github.com/baicie/ai-rules/tree/v0.1.0/packs/react-shadcn
+@baicie/airules-react-shadcn@0.1.0
 shadcn
 @baicie/react-shadcn
 ```
+
+The explicit `github:` and `npm:` source protocols remain supported for
+backward compatibility.
 
 ## Local state
 
@@ -71,11 +82,19 @@ shadcn
 ├── agent/
 │   ├── airules.config.ts
 │   ├── airules.lock.json
-│   ├── cache/
-│   ├── staged/
-│   └── state.json
+│   └── staged/
 └── skills/
 ```
+
+Remote pack cache is shared across projects:
+
+```txt
+~/.cache/airules/packs/
+├── github/<owner>/<repo>/<commit>/<pathHash>/
+└── npm/<package>/<version>/
+```
+
+Set `AIRULES_CACHE_DIR` to override the global cache directory.
 
 ## Release
 

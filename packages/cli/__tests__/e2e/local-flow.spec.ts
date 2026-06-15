@@ -1,5 +1,4 @@
 import {
-  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -28,10 +27,6 @@ function createProject(): string {
     recursive: true,
   })
 
-  mkdirSync(join(packRoot, 'files/.cursor/rules'), {
-    recursive: true,
-  })
-
   mkdirSync(join(packRoot, 'skills/shadcn-page'), {
     recursive: true,
   })
@@ -44,7 +39,7 @@ function createProject(): string {
         version: '0.1.0',
         profiles: {
           default: {
-            installs: ['codex-agents', 'cursor-shadcn', 'skill-shadcn-page'],
+            installs: ['codex-agents', 'skill-shadcn-page'],
           },
         },
         modules: {
@@ -58,14 +53,6 @@ function createProject(): string {
             mode: 'modules',
             concat: ['core'],
             merge: 'managed-block',
-          },
-          {
-            id: 'cursor-shadcn',
-            agent: 'cursor',
-            target: '.cursor/rules/shadcn.mdc',
-            mode: 'file',
-            from: 'files/.cursor/rules/shadcn.mdc',
-            merge: 'overwrite-managed',
           },
           {
             id: 'skill-shadcn-page',
@@ -85,11 +72,6 @@ function createProject(): string {
   writeFileSync(
     join(packRoot, 'modules/001-core.md'),
     '## Core\n\n- Use pnpm.\n',
-  )
-
-  writeFileSync(
-    join(packRoot, 'files/.cursor/rules/shadcn.mdc'),
-    '---\ndescription: shadcn rules\n---\n\n# shadcn\n',
   )
 
   writeFileSync(
@@ -122,7 +104,7 @@ describe('local airules flow', () => {
     await runAddCommand({
       cwd,
       source: './packs/react-shadcn',
-      agent: 'codex,cursor,skill',
+      agent: 'codex,skill',
     }).then(() => {
       expect('not listed in security.trustedSources').toHaveBeenWarned()
     })
@@ -130,9 +112,6 @@ describe('local airules flow', () => {
     expect(readFileSync(join(cwd, 'AGENTS.md'), 'utf8')).toContain(
       'airules:start',
     )
-    expect(
-      readFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'utf8'),
-    ).toContain('# shadcn')
     expect(
       readFileSync(join(cwd, '.agents/skills/shadcn-page/SKILL.md'), 'utf8'),
     ).toContain('shadcn page skill')
@@ -153,8 +132,6 @@ describe('local airules flow', () => {
       cwd,
       pack: '@baicie/react-shadcn',
     })
-
-    expect(existsSync(join(cwd, '.cursor/rules/shadcn.mdc'))).toBe(false)
 
     await runPruneCommand({
       cwd,

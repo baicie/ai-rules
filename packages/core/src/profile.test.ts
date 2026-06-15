@@ -7,7 +7,7 @@ const pack: AirulesPack = {
   version: '0.1.0',
   profiles: {
     default: {
-      installs: ['codex', 'cursor'],
+      installs: ['codex', 'docs'],
       variables: {
         packageManager: 'pnpm',
         requireTests: false,
@@ -31,11 +31,11 @@ const pack: AirulesPack = {
       concat: ['core'],
     },
     {
-      id: 'cursor',
-      agent: 'cursor',
-      target: '.cursor/rules/rule.mdc',
+      id: 'docs',
+      agent: 'generic',
+      target: 'docs/ai/rule.md',
       mode: 'file',
-      from: 'files/cursor.mdc',
+      from: 'files/rule.md',
     },
     {
       id: 'copilot',
@@ -53,7 +53,7 @@ describe('resolveProfile', () => {
 
     expect(profile).toEqual({
       name: 'strict',
-      installs: ['codex', 'cursor', 'copilot'],
+      installs: ['codex', 'docs', 'copilot'],
       variables: {
         packageManager: 'pnpm',
         requireTests: true,
@@ -105,7 +105,7 @@ describe('selectInstalls', () => {
 
     expect(installs.map(install => install.id)).toEqual([
       'codex',
-      'cursor',
+      'docs',
       'copilot',
     ])
   })
@@ -113,10 +113,10 @@ describe('selectInstalls', () => {
   it('filters installs by agents', () => {
     const installs = selectInstalls(pack, {
       profile: 'strict',
-      agents: ['cursor'],
+      agents: ['generic'],
     })
 
-    expect(installs.map(install => install.id)).toEqual(['cursor'])
+    expect(installs.map(install => install.id)).toEqual(['docs'])
   })
 
   it('throws when profile references missing install id', () => {

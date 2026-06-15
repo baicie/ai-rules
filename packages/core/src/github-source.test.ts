@@ -3,6 +3,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { AIRULES_CACHE_ENV } from './cache-path'
 import {
   getGitHubPackCacheRoot,
   normalizeGitHubPath,
@@ -19,6 +20,7 @@ function createTempProject(): string {
 }
 
 afterEach(() => {
+  vi.unstubAllEnvs()
   vi.unstubAllGlobals()
 
   if (currentTmpDir) {
@@ -71,6 +73,7 @@ describe('resolveGitHubPackSource', () => {
 
   it('downloads github pack into cache and resolves commit', () => {
     const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
 
     return resolveGitHubPackSource(
       'github:baicie/ai-rules/packs/react-shadcn#v0.1.0',
@@ -87,6 +90,7 @@ describe('resolveGitHubPackSource', () => {
 
       expect(existsSync(join(resolved.root, 'airules.pack.json'))).toBe(true)
       expect(existsSync(join(resolved.root, 'modules/core.md'))).toBe(true)
+      expect(resolved.root).toContain(join(cwd, 'global-cache', 'packs'))
 
       const pack = readFileSync(
         join(resolved.root, 'airules.pack.json'),
@@ -98,6 +102,7 @@ describe('resolveGitHubPackSource', () => {
 
   it('uses default branch when ref is omitted', () => {
     const cwd = createTempProject()
+    vi.stubEnv(AIRULES_CACHE_ENV, join(cwd, 'global-cache'))
 
     return resolveGitHubPackSource(
       'github:baicie/ai-rules/packs/react-shadcn',
@@ -109,6 +114,8 @@ describe('resolveGitHubPackSource', () => {
   })
 
   it('creates deterministic cache path', () => {
+    vi.stubEnv(AIRULES_CACHE_ENV, '/airules-cache')
+
     const cacheRoot = getGitHubPackCacheRoot('/repo', {
       owner: 'baicie',
       repo: 'ai-rules',
@@ -117,7 +124,7 @@ describe('resolveGitHubPackSource', () => {
     })
 
     expect(cacheRoot).toMatch(
-      /[\\/]repo[\\/]\.agents[\\/]agent[\\/]cache[\\/]github[\\/]baicie[\\/]ai-rules[\\/]abc[\\/]/,
+      /[\\/]airules-cache[\\/]packs[\\/]github[\\/]baicie[\\/]ai-rules[\\/]abc[\\/]/,
     )
   })
 })

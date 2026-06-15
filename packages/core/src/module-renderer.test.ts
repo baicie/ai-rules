@@ -107,11 +107,11 @@ describe('renderModules', () => {
       version: '0.1.0',
       installs: [
         {
-          id: 'cursor',
-          agent: 'cursor',
-          target: '.cursor/rules/rule.mdc',
+          id: 'docs',
+          agent: 'generic',
+          target: 'docs/ai/rule.md',
           mode: 'file',
-          from: 'files/rule.mdc',
+          from: 'files/rule.md',
         },
       ],
     }

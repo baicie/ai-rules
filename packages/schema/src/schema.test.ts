@@ -57,9 +57,9 @@ describe('airulesPackSchema', () => {
       version: '0.1.0',
       installs: [
         {
-          id: 'cursor',
-          agent: 'cursor',
-          target: '.cursor/rules/rule.mdc',
+          id: 'docs',
+          agent: 'generic',
+          target: 'docs/ai/rule.md',
           mode: 'template',
           blocks: ['core'],
         },
@@ -80,7 +80,7 @@ describe('airulesConfigSchema', () => {
         {
           source: 'github:baicie/ai-rules/packs/react-shadcn#v0.1.0',
           profile: 'strict',
-          agents: ['codex', 'cursor'],
+          agents: ['codex', 'generic'],
           variables: {
             packageManager: 'pnpm',
           },
@@ -105,14 +105,14 @@ describe('airulesLockfileSchema', () => {
       installs: [
         {
           pack: '@baicie/react-shadcn',
-          installId: 'cursor',
-          agent: 'cursor',
-          target: '.cursor/rules/shadcn.mdc',
+          installId: 'docs',
+          agent: 'generic',
+          target: 'docs/ai/shadcn.md',
           mode: 'file',
           merge: 'overwrite-managed',
           files: [
             {
-              target: '.cursor/rules/shadcn.mdc',
+              target: 'docs/ai/shadcn.md',
               contentHash: 'sha256-file',
             },
           ],

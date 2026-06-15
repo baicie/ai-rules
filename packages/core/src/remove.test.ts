@@ -55,18 +55,18 @@ function writeLock(cwd: string): void {
           },
           {
             pack: '@baicie/react-shadcn',
-            installId: 'cursor',
-            agent: 'cursor',
-            target: '.cursor/rules/shadcn.mdc',
+            installId: 'docs',
+            agent: 'generic',
+            target: 'docs/ai/shadcn.md',
             mode: 'file',
             merge: 'overwrite-managed',
             files: [
               {
-                target: '.cursor/rules/shadcn.mdc',
-                contentHash: sha256('cursor content\n'),
+                target: 'docs/ai/shadcn.md',
+                contentHash: sha256('docs content\n'),
               },
             ],
-            contentHash: sha256('cursor content\n'),
+            contentHash: sha256('docs content\n'),
           },
         ],
       },
@@ -109,10 +109,10 @@ describe('removePack', () => {
       ].join('\n'),
     )
 
-    mkdirSync(join(cwd, '.cursor/rules'), {
+    mkdirSync(join(cwd, 'docs/ai'), {
       recursive: true,
     })
-    writeFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'cursor content\n')
+    writeFileSync(join(cwd, 'docs/ai/shadcn.md'), 'docs content\n')
 
     const result = removePack({
       cwd,
@@ -127,7 +127,7 @@ describe('removePack', () => {
     expect(readFileSync(join(cwd, 'AGENTS.md'), 'utf8')).not.toContain(
       'airules:start',
     )
-    expect(existsSync(join(cwd, '.cursor/rules/shadcn.mdc'))).toBe(false)
+    expect(existsSync(join(cwd, 'docs/ai/shadcn.md'))).toBe(false)
 
     const lock = readFileSync(
       join(cwd, '.agents/agent/airules.lock.json'),
@@ -140,10 +140,10 @@ describe('removePack', () => {
     const cwd = createProject()
     writeLock(cwd)
 
-    mkdirSync(join(cwd, '.cursor/rules'), {
+    mkdirSync(join(cwd, 'docs/ai'), {
       recursive: true,
     })
-    writeFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'user modified\n')
+    writeFileSync(join(cwd, 'docs/ai/shadcn.md'), 'user modified\n')
 
     const result = removePack({
       cwd,
@@ -153,7 +153,7 @@ describe('removePack', () => {
     expect(
       result.operations.some(operation => operation.action === 'skip-modified'),
     ).toBe(true)
-    expect(existsSync(join(cwd, '.cursor/rules/shadcn.mdc'))).toBe(true)
+    expect(existsSync(join(cwd, 'docs/ai/shadcn.md'))).toBe(true)
 
     const lock = readFileSync(
       join(cwd, '.agents/agent/airules.lock.json'),
@@ -166,10 +166,10 @@ describe('removePack', () => {
     const cwd = createProject()
     writeLock(cwd)
 
-    mkdirSync(join(cwd, '.cursor/rules'), {
+    mkdirSync(join(cwd, 'docs/ai'), {
       recursive: true,
     })
-    writeFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'user modified\n')
+    writeFileSync(join(cwd, 'docs/ai/shadcn.md'), 'user modified\n')
 
     const result = removePack({
       cwd,
@@ -180,7 +180,7 @@ describe('removePack', () => {
     expect(
       result.operations.some(operation => operation.action === 'delete-file'),
     ).toBe(true)
-    expect(existsSync(join(cwd, '.cursor/rules/shadcn.mdc'))).toBe(false)
+    expect(existsSync(join(cwd, 'docs/ai/shadcn.md'))).toBe(false)
   })
 
   it('supports dry-run without changing files or lockfile', () => {

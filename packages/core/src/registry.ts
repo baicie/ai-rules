@@ -9,6 +9,10 @@ import { isAbsolute, resolve } from 'node:path'
 import process from 'node:process'
 import { AirulesRegistrySchema } from '@baicie/airules-schema'
 import { parseGitHubSource } from './github-source'
+import {
+  isDirectPackSourceInput,
+  normalizePackSourceInput,
+} from './source-spec'
 
 export const DEFAULT_REGISTRY_SOURCE =
   'github:baicie/ai-rules/registry.json#main'
@@ -46,17 +50,7 @@ export interface SearchRegistryResult {
 }
 
 export function isDirectPackSource(source: string): boolean {
-  return (
-    source.startsWith('./') ||
-    source.startsWith('../') ||
-    source.startsWith('/') ||
-    source.startsWith('local:') ||
-    source.startsWith('file://') ||
-    source.startsWith('github:') ||
-    source.startsWith('npm:') ||
-    source.startsWith('http://') ||
-    source.startsWith('https://')
-  )
+  return isDirectPackSourceInput(source)
 }
 
 export async function resolvePackAlias(
@@ -65,7 +59,7 @@ export async function resolvePackAlias(
   if (isDirectPackSource(options.source)) {
     return {
       input: options.source,
-      source: options.source,
+      source: normalizePackSourceInput(options.source),
     }
   }
 

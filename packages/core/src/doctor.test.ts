@@ -18,7 +18,7 @@ function createProject(): string {
 
 function writeLock(
   cwd: string,
-  cursorHash: string,
+  docsHash: string,
   codexHash = sha256('## Core\n'),
 ): void {
   writeFileSync(
@@ -47,18 +47,18 @@ function writeLock(
           },
           {
             pack: '@baicie/react-shadcn',
-            installId: 'cursor',
-            agent: 'cursor',
-            target: '.cursor/rules/shadcn.mdc',
+            installId: 'docs',
+            agent: 'generic',
+            target: 'docs/ai/shadcn.md',
             mode: 'file',
             merge: 'overwrite-managed',
             files: [
               {
-                target: '.cursor/rules/shadcn.mdc',
-                contentHash: cursorHash,
+                target: 'docs/ai/shadcn.md',
+                contentHash: docsHash,
               },
             ],
-            contentHash: cursorHash,
+            contentHash: docsHash,
           },
         ],
       },
@@ -82,7 +82,7 @@ describe('runDoctor', () => {
   it('reports ok for managed block and clean generated file', () => {
     const cwd = createProject()
 
-    mkdirSync(join(cwd, '.cursor/rules'), {
+    mkdirSync(join(cwd, 'docs/ai'), {
       recursive: true,
     })
 
@@ -98,8 +98,8 @@ describe('runDoctor', () => {
       ),
     )
 
-    writeFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'cursor content\n')
-    writeLock(cwd, sha256('cursor content\n'))
+    writeFileSync(join(cwd, 'docs/ai/shadcn.md'), 'docs content\n')
+    writeLock(cwd, sha256('docs content\n'))
 
     const result = runDoctor({
       cwd,
@@ -117,7 +117,7 @@ describe('runDoctor', () => {
   it('reports missing managed block', () => {
     const cwd = createProject()
     writeFileSync(join(cwd, 'AGENTS.md'), '# no block\n')
-    writeLock(cwd, sha256('cursor content\n'))
+    writeLock(cwd, sha256('docs content\n'))
 
     const result = runDoctor({
       cwd,
@@ -144,11 +144,11 @@ describe('runDoctor', () => {
       ),
     )
 
-    mkdirSync(join(cwd, '.cursor/rules'), {
+    mkdirSync(join(cwd, 'docs/ai'), {
       recursive: true,
     })
-    writeFileSync(join(cwd, '.cursor/rules/shadcn.mdc'), 'changed\n')
-    writeLock(cwd, sha256('cursor content\n'))
+    writeFileSync(join(cwd, 'docs/ai/shadcn.md'), 'changed\n')
+    writeLock(cwd, sha256('docs content\n'))
 
     const result = runDoctor({
       cwd,
@@ -219,7 +219,7 @@ describe('runDoctor', () => {
 
   it('reports missing target files as error', () => {
     const cwd = createProject()
-    writeLock(cwd, sha256('cursor content\n'))
+    writeLock(cwd, sha256('docs content\n'))
 
     const result = runDoctor({
       cwd,

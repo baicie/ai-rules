@@ -44,13 +44,26 @@ describe('resolvePackSource', () => {
     const npmSource = await import('./npm-source')
     const spy = vi.spyOn(npmSource, 'resolveNpmPackSource').mockResolvedValue({
       source: 'npm:@baicie/pkg',
-      root: '/repo/.agents/agent/cache/npm/_baicie_pkg/0.1.0',
+      root: '/cache/airules/packs/npm/_baicie_pkg/0.1.0',
       resolved: { type: 'npm', packageName: '@baicie/pkg', version: '0.1.0' },
     })
 
     const result = await resolvePackSource('npm:@baicie/pkg', '/repo')
     expect(spy).toHaveBeenCalledWith('npm:@baicie/pkg', '/repo')
     expect(result.resolved.type).toBe('npm')
+    spy.mockRestore()
+  })
+
+  it('normalizes npm package specs before resolving', async () => {
+    const npmSource = await import('./npm-source')
+    const spy = vi.spyOn(npmSource, 'resolveNpmPackSource').mockResolvedValue({
+      source: 'npm:@baicie/pkg@0.1.0',
+      root: '/cache/airules/packs/npm/_baicie_pkg/0.1.0',
+      resolved: { type: 'npm', packageName: '@baicie/pkg', version: '0.1.0' },
+    })
+
+    await resolvePackSource('@baicie/pkg@0.1.0', '/repo')
+    expect(spy).toHaveBeenCalledWith('npm:@baicie/pkg@0.1.0', '/repo')
     spy.mockRestore()
   })
 })

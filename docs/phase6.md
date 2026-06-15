@@ -16,9 +16,11 @@ registry publish
 ## npm source
 
 ```bash
-airules add npm:@baicie/airules-react-shadcn
-airules add npm:@baicie/airules-react-shadcn@0.1.0
+airules add @baicie/airules-react-shadcn@0.1.0
+airules add airules-react-shadcn@latest
 ```
+
+The explicit `npm:` protocol remains supported for backward compatibility.
 
 Resolution:
 
@@ -26,7 +28,7 @@ Resolution:
 1. Read npm metadata from registry.npmjs.org.
 2. Resolve latest or exact version.
 3. Download tarball.
-4. Extract into .agents/agent/cache/npm.
+4. Extract into the global cache under `~/.cache/airules/packs/npm`.
 5. Load airules.pack.json from extracted package root.
 ```
 

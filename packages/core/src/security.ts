@@ -1,5 +1,6 @@
 import type { AirulesConfig } from '@baicie/airules-schema'
 import { isGitHubSource, parseGitHubSource } from './github-source'
+import { normalizePackSourceInput } from './source-spec'
 
 export interface SourceSecurityResult {
   warnings: string[]
@@ -17,10 +18,12 @@ export function validateSourceSecurity(
     }
   }
 
+  const normalizedSource = normalizePackSourceInput(source)
+
   if (
     security.requirePinnedVersion === true &&
-    isGitHubSource(source) &&
-    !hasPinnedGitHubRef(source)
+    isGitHubSource(normalizedSource) &&
+    !hasPinnedGitHubRef(normalizedSource)
   ) {
     throw new Error(
       `GitHub source "${source}" is not pinned. Add "#<tag-or-commit>" or disable security.requirePinnedVersion.`,
@@ -30,7 +33,10 @@ export function validateSourceSecurity(
   const trustedSources =
     security.trustedSources !== undefined ? security.trustedSources : []
 
-  if (trustedSources.length > 0 && !isTrustedSource(source, trustedSources)) {
+  if (
+    trustedSources.length > 0 &&
+    !isTrustedSource(normalizedSource, trustedSources)
+  ) {
     warnings.push(
       `Source "${source}" is not listed in security.trustedSources.`,
     )
@@ -42,11 +48,13 @@ export function validateSourceSecurity(
 }
 
 export function hasPinnedGitHubRef(source: string): boolean {
-  if (!isGitHubSource(source)) {
+  const normalizedSource = normalizePackSourceInput(source)
+
+  if (!isGitHubSource(normalizedSource)) {
     return true
   }
 
-  const parsed = parseGitHubSource(source)
+  const parsed = parseGitHubSource(normalizedSource)
   return parsed.ref !== undefined && parsed.ref.length > 0
 }
 
@@ -54,8 +62,15 @@ export function isTrustedSource(
   source: string,
   trustedSources: string[],
 ): boolean {
+  const normalizedSource = normalizePackSourceInput(source)
+
   for (const trustedSource of trustedSources) {
-    if (source === trustedSource || source.startsWith(trustedSource)) {
+    const normalizedTrustedSource = normalizePackSourceInput(trustedSource)
+
+    if (
+      normalizedSource === normalizedTrustedSource ||
+      normalizedSource.startsWith(normalizedTrustedSource)
+    ) {
       return true
     }
   }

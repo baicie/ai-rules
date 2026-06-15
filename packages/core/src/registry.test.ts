@@ -67,6 +67,8 @@ describe('isDirectPackSource', () => {
     expect(isDirectPackSource('../packs/a')).toBe(true)
     expect(isDirectPackSource('local:./packs/a')).toBe(true)
     expect(isDirectPackSource('github:baicie/ai-rules/packs/a#main')).toBe(true)
+    expect(isDirectPackSource('baicie/ai-rules/packs/a#main')).toBe(true)
+    expect(isDirectPackSource('@baicie/react-shadcn@0.1.0')).toBe(true)
     expect(isDirectPackSource('@baicie/react-shadcn')).toBe(false)
     expect(isDirectPackSource('react-shadcn')).toBe(false)
   })

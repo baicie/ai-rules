@@ -7,14 +7,20 @@ Phase 2 adds GitHub source support to the local module installer.
 Phase 1 supports only local packs. Phase 2 supports:
 
 ```txt
-github:owner/repo/path#ref
+owner/repo/path#ref
+https://github.com/owner/repo/tree/ref/path
 ```
+
+The explicit `github:owner/repo/path#ref` protocol remains supported for
+backward compatibility.
 
 The GitHub pack is downloaded into:
 
 ```txt
-.agents/agent/cache/github/<owner>/<repo>/<commit>/<pathHash>
+~/.cache/airules/packs/github/<owner>/<repo>/<commit>/<pathHash>
 ```
+
+Set `AIRULES_CACHE_DIR` to override the global cache directory.
 
 Then the existing local pack loader installs it from cache.
 
@@ -25,7 +31,7 @@ Then the existing local pack loader installs it from cache.
 - commit resolution
 - recursive tree download
 - blob download
-- cache write
+- global cache write
 - lockfile commit recording
 - `GITHUB_TOKEN` / `GH_TOKEN`
 - `security.requirePinnedVersion`
@@ -44,9 +50,9 @@ Then the existing local pack loader installs it from cache.
 ## Examples
 
 ```bash
-airules add github:baicie/ai-rules/packs/react-shadcn#v0.1.0 --agent codex
-airules add github:baicie/ai-rules/packs/react-shadcn#main --agent codex
-airules add github:baicie/ai-rules/packs/react-shadcn --agent codex
+airules add baicie/ai-rules/packs/react-shadcn#v0.1.0 --agent codex
+airules add baicie/ai-rules/packs/react-shadcn#main --agent codex
+airules add https://github.com/baicie/ai-rules/tree/main/packs/react-shadcn --agent codex
 ```
 
 ## Security
@@ -62,19 +68,19 @@ security: {
 This source is rejected:
 
 ```txt
-github:baicie/ai-rules/packs/react-shadcn
+baicie/ai-rules/packs/react-shadcn
 ```
 
 Use:
 
 ```txt
-github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+baicie/ai-rules/packs/react-shadcn#v0.1.0
 ```
 
 or:
 
 ```txt
-github:baicie/ai-rules/packs/react-shadcn#<commit>
+baicie/ai-rules/packs/react-shadcn#<commit>
 ```
 
 ## GitHub API

@@ -29,7 +29,7 @@ Not supported yet:
 ## Example
 
 ```bash
-airules add ./packs/react-shadcn --profile strict --agent codex,cursor
+airules add ./packs/react-shadcn --profile strict --agent codex,copilot
 ```
 
 ## Local source
