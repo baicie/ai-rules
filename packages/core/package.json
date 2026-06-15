@@ -1,7 +1,7 @@
 {
   "name": "@baicie/airules-core",
   "type": "module",
-  "version": "0.0.1-beta.3",
+  "version": "0.0.1-beta.4",
   "description": "Core installer, source resolver, registry, lockfile, and pack tooling for airules.",
   "license": "MIT",
   "repository": {
