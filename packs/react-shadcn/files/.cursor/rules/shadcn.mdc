@@ -1,5 +1,12 @@
 ---
-description: shadcn rules
+description: React shadcn/ui coding rules
+globs:
+  - "**/*.{ts,tsx}"
 ---
 
-# Cursor shadcn
+# React shadcn/ui Rules
+
+- Prefer existing shadcn/ui primitives.
+- Keep component APIs typed and explicit.
+- Avoid unnecessary abstractions.
+- Add tests for important UI behavior.

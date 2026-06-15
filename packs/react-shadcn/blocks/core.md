@@ -1,3 +1,0 @@
-## Core
-
-- Use TypeScript.

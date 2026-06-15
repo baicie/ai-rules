@@ -105,6 +105,13 @@ export async function resolveNpmPackSource(
     cacheRoot,
   })
 
+  const packFilePath = join(cacheRoot, 'airules.pack.json')
+  if (!existsSync(packFilePath)) {
+    throw new Error(
+      `npm package "${parsed.packageName}@${version}" does not contain airules.pack.json at package root.`,
+    )
+  }
+
   return {
     source,
     root: cacheRoot,

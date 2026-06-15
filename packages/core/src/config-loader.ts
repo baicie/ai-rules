@@ -79,6 +79,7 @@ function loadConfigFileSync(configPath: string): unknown {
 
   const jiti = createJiti(import.meta.url, {
     interopDefault: true,
+    moduleCache: false,
   })
 
   const loaded = jiti(pathToFileURL(resolve(configPath)).href)
@@ -93,6 +94,7 @@ async function loadConfigFile(configPath: string): Promise<unknown> {
 
   const jiti = createJiti(import.meta.url, {
     interopDefault: true,
+    moduleCache: false,
   })
 
   const loaded = await jiti.import(pathToFileURL(resolve(configPath)).href, {

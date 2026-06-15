@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   rmSync,
   writeFileSync,
 } from 'node:fs'
@@ -89,6 +90,17 @@ describe('resolveNpmPackSource', () => {
       /[\\/]repo[\\/]\.agents[\\/]agent[\\/]cache[\\/]npm[\\/]_baicie_airules-react-shadcn[\\/]0\.1\.0$/,
     )
   })
+
+  it('throws when npm package does not contain airules.pack.json at package root', async () => {
+    const cwd = createTempProject()
+    const tarball = await createInvalidPackTarball()
+
+    vi.stubGlobal('fetch', createMockFetch(tarball))
+
+    await expect(
+      resolveNpmPackSource('npm:@baicie/airules-react-shadcn@0.1.0', cwd),
+    ).rejects.toThrow(/does not contain airules\.pack\.json/)
+  })
 })
 
 async function createPackTarball(): Promise<Buffer> {
@@ -135,6 +147,37 @@ async function createPackTarball(): Promise<Buffer> {
   const buffer = Buffer.from(
     await import('node:fs').then(fs => fs.readFileSync(tarballPath)),
   )
+
+  rmSync(root, {
+    recursive: true,
+    force: true,
+  })
+
+  return buffer
+}
+
+async function createInvalidPackTarball(): Promise<Buffer> {
+  const root = mkdtempSync(join(tmpdir(), 'airules-npm-invalid-pack-'))
+  const packageRoot = join(root, 'package')
+
+  mkdirSync(join(packageRoot, 'modules'), {
+    recursive: true,
+  })
+
+  writeFileSync(join(packageRoot, 'modules/core.md'), '## Core\n')
+
+  const tarballPath = join(root, 'package.tgz')
+
+  await tar.c(
+    {
+      gzip: true,
+      file: tarballPath,
+      cwd: root,
+    },
+    ['package'],
+  )
+
+  const buffer = readFileSync(tarballPath)
 
   rmSync(root, {
     recursive: true,

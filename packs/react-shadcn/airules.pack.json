@@ -1,31 +1,48 @@
 {
+  "$schema": "https://baicie.github.io/airules/schema/pack.schema.json",
   "name": "@baicie/react-shadcn",
   "version": "0.1.0",
+  "description": "React + shadcn/ui AI coding rules",
+  "license": "MIT",
+  "keywords": ["react", "shadcn", "tailwind", "frontend"],
   "profiles": {
     "default": {
-      "installs": ["codex", "cursor", "skill"],
+      "installs": [
+        "codex-agents",
+        "cursor-shadcn",
+        "copilot-main",
+        "skill-shadcn-page"
+      ],
       "variables": {
         "packageManager": "pnpm",
+        "uiAlias": "@/components/ui",
         "requireTests": true
       }
     }
   },
+  "modules": {
+    "core": "modules/001-core.md",
+    "react": "modules/010-react.md",
+    "shadcn": "modules/020-shadcn.md",
+    "testing": "modules/030-testing.md"
+  },
   "blocks": {
-    "core": "blocks/core.md",
-    "shadcn": "blocks/shadcn.md",
-    "testing": "blocks/testing.md"
+    "shadcn": "blocks/shadcn.md"
   },
   "installs": [
     {
-      "id": "codex",
+      "id": "codex-agents",
       "agent": "codex",
       "target": "AGENTS.md",
-      "mode": "template",
-      "template": "templates/AGENTS.md.hbs",
+      "mode": "modules",
+      "placement": {
+        "type": "append"
+      },
+      "concat": ["core", "react", "shadcn", "testing"],
       "merge": "managed-block"
     },
     {
-      "id": "cursor",
+      "id": "cursor-shadcn",
       "agent": "cursor",
       "target": ".cursor/rules/shadcn.mdc",
       "mode": "file",
@@ -33,7 +50,18 @@
       "merge": "overwrite-managed"
     },
     {
-      "id": "skill",
+      "id": "copilot-main",
+      "agent": "copilot",
+      "target": ".github/copilot-instructions.md",
+      "mode": "modules",
+      "placement": {
+        "type": "append"
+      },
+      "concat": ["core", "react", "shadcn"],
+      "merge": "managed-block"
+    },
+    {
+      "id": "skill-shadcn-page",
       "agent": "skill",
       "target": ".agents/skills/shadcn-page",
       "mode": "directory",

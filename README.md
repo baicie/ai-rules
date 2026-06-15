@@ -1,47 +1,78 @@
 # ai-rules
 
-Reusable AI coding rule packs and the `airules` CLI.
+AI Rules Pack Manager for coding agents.
 
-## Goals
+`airules` installs reusable AI coding rules into:
 
-`airules` is a rule pack manager for coding agents. It installs reusable rule modules, generated blocks, direct files, and skills into a target repository.
+- `AGENTS.md`
+- `CLAUDE.md`
+- `.cursor/rules/*.mdc`
+- `.github/copilot-instructions.md`
+- `.agents/skills/*`
+- `docs/ai/*`
 
-Local configuration and lock state live under:
+## Install
 
-```txt
-.agents/agent
+```bash
+pnpm dlx @baicie/airules init
 ```
 
-## Phase 0
+## Add local pack
 
-Phase 0 provides:
+```bash
+pnpm dlx @baicie/airules add ./packs/react-shadcn --agent codex,cursor,skill
+```
 
-- Pack / Config / Lockfile schema.
-- TypeScript definitions.
-- Config loading from `.agents/agent`.
-- Profile resolution.
-- Managed block helpers.
-- CLI skeleton.
+## Add registry alias
 
-## Packages
-
-| Package                  | Description                                                        |
-| ------------------------ | ------------------------------------------------------------------ |
-| `@baicie/airules-schema` | Zod schemas and TypeScript types for packs, configs and lockfiles. |
-| `@baicie/airules-core`   | Config loading, profile resolution, managed block helpers.         |
-| `@baicie/airules`        | The `airules` CLI.                                                 |
+```bash
+pnpm dlx @baicie/airules add shadcn --agent codex,cursor
+```
 
 ## Commands
 
 ```bash
-pnpm install
-pnpm check
+airules init
+airules add <source>
+airules update
+airules diff
+airules doctor
+airules remove <pack>
+airules prune
+airules list
+
+airules search [query]
+airules registries
+airules registry-publish <pack>
+
+airules pack-validate <pack>
+airules pack-build <pack>
+
+airules create-pack <name>
+airules create-skill <name>
+airules create-registry
 ```
 
-The CLI provides:
+## Source formats
 
-```bash
-airules init
-airules doctor
-airules list
+```txt
+./packs/react-shadcn
+local:./packs/react-shadcn
+github:baicie/ai-rules/packs/react-shadcn#v0.1.0
+npm:@baicie/airules-react-shadcn@0.1.0
+shadcn
+@baicie/react-shadcn
+```
+
+## Local state
+
+```txt
+.agents/
+├── agent/
+│   ├── airules.config.ts
+│   ├── airules.lock.json
+│   ├── cache/
+│   ├── staged/
+│   └── state.json
+└── skills/
 ```
