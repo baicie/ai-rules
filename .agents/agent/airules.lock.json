@@ -1,7 +1,41 @@
 {
   "lockfileVersion": 1,
-  "generatedAt": "2026-06-14T14:26:35.863Z",
   "airulesVersion": "0.0.0",
-  "packs": [],
-  "installs": []
+  "generatedAt": "2026-06-15T12:37:26.182Z",
+  "packs": [
+    {
+      "name": "@baicie/react-shadcn",
+      "version": "0.1.0",
+      "source": "github:baicie/ai-rules",
+      "resolved": {
+        "type": "github",
+        "owner": "baicie",
+        "repo": "ai-rules",
+        "path": "packs/react-shadcn",
+        "ref": "main",
+        "commit": "ceaf99dfffb2adb60b374a6c6cb3e0b09a924885"
+      },
+      "hash": "sha256-f3c7c23ce6897270dd850af18f14f93f1ae8ec8bb0c2020ae69da67796019603",
+      "agents": ["codex"]
+    }
+  ],
+  "installs": [
+    {
+      "pack": "@baicie/react-shadcn",
+      "installId": "codex-agents",
+      "agent": "codex",
+      "target": "AGENTS.md",
+      "mode": "modules",
+      "merge": "managed-block",
+      "files": [
+        {
+          "target": "AGENTS.md",
+          "contentHash": "sha256-71f01ab12e2562d1c1859a8475d82c40899211054b30f303251aa881f085e9d4"
+        }
+      ],
+      "contentHash": "sha256-527d8a8d1f50183a320d4f1dfbe98404a6069ea0c10ead174a83f8f013851849",
+      "managedBlockId": "airules:@baicie/react-shadcn:codex-agents",
+      "modules": ["core", "react", "shadcn", "testing"]
+    }
+  ]
 }

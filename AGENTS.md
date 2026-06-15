@@ -409,3 +409,33 @@ refactor(parser): simplify AST node creation
 
 - Run `pnpm test`.
 <!-- airules:end pack="@baicie/react-shadcn" install="codex" -->
+
+<!-- airules:start pack="@baicie/react-shadcn" install="codex-agents" version="0.1.0" hash="sha256-71f01ab12e2562d1c1859a8475d82c40899211054b30f303251aa881f085e9d4" -->
+
+## Core Rules
+
+- Use TypeScript for application code.
+- Prefer small, focused components.
+- Keep changes easy to review.
+- Prefer `pnpm` when package manager is not specified.
+
+## React Rules
+
+- Prefer function components.
+- Keep component props explicit and typed.
+- Avoid unnecessary global state.
+- Extract reusable UI logic into hooks only when it is shared.
+
+## shadcn/ui Rules
+
+- Prefer existing shadcn/ui primitives before creating new custom UI.
+- Keep generated components close to the app conventions.
+- Do not rewrite the whole design system for a small feature.
+- Keep class names readable and avoid over-nesting Tailwind utilities.
+
+## Testing Rules
+
+- Add unit tests for non-trivial logic.
+- Add interaction tests for complex UI behavior.
+- Do not mock everything; prefer testing visible behavior.
+<!-- airules:end pack="@baicie/react-shadcn" install="codex-agents" -->

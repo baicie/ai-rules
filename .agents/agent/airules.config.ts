@@ -1,18 +1,11 @@
-// airules config (v1)
-//
-// This file is loaded by airules. The default export is validated against
-// the airules config schema. You can optionally import the typed helper
-// from "@baicie/airules-schema" once it is installed in your project.
-
 export default {
-  version: 1,
-  registries: [
+  packs: [
     {
-      name: 'default',
-      source: 'github:baicie/ai-rules/registry.json#main',
+      name: '@baicie/react-shadcn',
+      source: 'github:baicie/ai-rules',
+      agents: ['codex'],
     },
   ],
-  packs: [],
   install: {
     conflict: 'warn',
   },
